@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "ukb-pret"
+version = "0.0.1"
+description = "UK Biobank PRS Release Evaluation Tool"
+authors = ["Genomics plc <info@genomicsplc.com>"]
+license = "BSD-3-Clause"
+packages = [
+	{ include = "ukb_pret", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.7.1, <3.10"
+scipy = "^1.7.1"
+scikit-learn = "^1.0"
+pandas = "^1.3.4"
+statsmodels = "^0.13.0"
+importlib-metadata = "^4.8.1"
+plotnine = "^0.8.0"
+PyYAML = "^6.0"
+pycodestyle = "^2.8.0"
+lifelines = "^0.26.3"
+fpdf2 = "^2.4.6"
+seaborn = "^0.11.2"
+
+[tool.poetry.dev-dependencies]
+
+[[tool.poetry.source]]
+name = 'genomics'
+url = 'https://artifactory.genomicsplc.com/api/pypi/pypi-local/simple'
+
+[tool.poetry.scripts]
+evaluate-prs = 'ukb_pret.cli:main'
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
