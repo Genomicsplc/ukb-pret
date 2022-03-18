@@ -163,11 +163,17 @@ class UkbPretReport(FPDF):
     def footer(self):
         self.set_y(-20)
         self.set_font('poppins-italic', '', self.text_size['vs'])
-        # TODO: Add Hyperlink to the word 'here' to the GitHub repo
         self.cell(0, 0, "This report was generated using Genomics plc's UK Biobank PRS Release Evaluation Tool.",
                   align='C')
-        self.ln(self.text_size['vs'])
-        self.cell(0, 0, "This software is available to use under the licence here", align='C')
+        self._spacing('vs')
+        license_text = "This software is available to use under the licence "
+        self.cell(0, 0, license_text, align='C')
+        self.set_x((self.w / 2) + (self.get_string_width(license_text) / 2) * 0.98)
+        self.set_text_color(0, 0, 255)
+        self.set_font(style="U")
+        self.cell(0, 0, "here", link="https://github.com/Genomicsplc/ukb-pret/blob/main/LICENCE")
+        self.set_font('poppins')
+        self.set_text_color(0)
         self.cell(0, 0, f'{self.current_page}', align='R')
 
     def next_page(self):
@@ -175,7 +181,7 @@ class UkbPretReport(FPDF):
 
     def preamble(self):
         self.set_font('poppins', size=self.text_size['r'])
-        self._simple_text("This report contains metrics and figures evaluating the Phenotype:")
+        self._simple_text("This report evaluates the Phenotype:")
         self.set_font('poppins-bold', size=self.text_size['r'])
         self._simple_text(f"    {self.results['phenotype_description']} ({self.results['phenotype_code']})")
         self.set_font('poppins', size=self.text_size['r'])
@@ -191,6 +197,7 @@ class UkbPretReport(FPDF):
 
     def write_sample_summary(self):
         self.set_font('poppins-bold', size=self.text_size['title3'])
+        self._spacing('n')
         self.cell(0, 0, 'Summary of the PRS sample inputs:')
         self._spacing('n')
         self.set_font('poppins', size=self.text_size['r'])
@@ -200,10 +207,8 @@ class UkbPretReport(FPDF):
             self._simple_text(name + ':')
             self.set_font('poppins', size=self.text_size['r'])
             self._simple_text('  ' + data['n_input_samples']['description'])
-            self._simple_text('  ' + data['n_removed_prs']['description'])
+            self._simple_text('  ' + data['n_removed_prs_tot']['description'])
             self._simple_text('  ' + data['n_removed_pheno']['description'])
-            self._simple_text('  ' + data['n_removed_from_ukb_wbu_filtering']['description'])
-            self._simple_text('  ' + data['n_removed_from_input_intersection']['description'])
 
         if self.results['metadata'][self.data_sources[0]]['n_included_samples']['value'] != \
                 self.results['metadata'][self.data_sources[1]]['n_included_samples']['value']:
@@ -297,27 +302,32 @@ class UkbPretReport(FPDF):
         self.paragraph(description, size='s')
         if self.results['flavour'] == 'binary':
             self.paragraph('- Conditional Odds Ratio per 1 standard deviation in PRS (Conditional OR), which '
-                           'represents the disease risk increase per one standard deviation in PRS. '
-                           'This was calculated using a model that includes sex and age at first '
-                           'assessment as covariates (or just age at first '
-                           'assessment for single sex analyses).', size='s')
-            self.paragraph('- Conditional Hazard Ratio per 1 standard deviation in PRS (Conditional HR), which '
-                           'represents the disease risk increase per one standard deviation increase in PRS. '
-                           'This was calculated using a Cox proportional-hazards model, that includes sex and age '
-                           'at first assessment (or just age at first assessment for single sex analyses). '
-                           'For HRs in different percentiles, please refer to the output CSV file.', size='s')
+                           'represents the relative difference in disease risk per one standard deviation higher PRS.'
+                           ' This was calculated using a logistic regression model that includes sex and age at first '
+                           'assessment as covariates (or just age at first assessment for single sex analyses). '
+                           'For ORs in different percentiles, please refer to the output CSV file.',
+                           size='s')
+            self.paragraph('- Conditional Hazard Ratio per 1 standard deviation in PRS (Conditional HR), '
+                           'which is an alternative estimate of the difference in disease risk per one standard '
+                           'deviation higher PRS. This was calculated using a Cox proportional hazards survival model '
+                           'that includes sex and age at first assessment as covariates (or just age at '
+                           'first assessment for single sex analyses).',
+                           size='s')
             self.paragraph('- Area Under Curve (AUC) calculated from a Receiver Operator Characteristic (ROC) curve, '
                            'which quantifies the model\'s ability to distinguish between a true and false positive.',
                            size='s')
         else:
-            self.paragraph('- R-squared (Rsq), a statistical measure of fit for quantitative data.', size='s')
-            self.paragraph('- Beta per 1 standard deviation in PRS (beta per std), which indicates the increase in '
-                           'phenotype (measurement unit) per 1 SD PRS increase.', size='s')
+            self.paragraph('- R-squared (Rsq), which indicates the proportion of the variation in the quantitative '
+                           'trait which can be attributed to the PRS.', size='s')
+            self.paragraph('- Beta per 1 standard deviation in PRS (beta per std), which is an estimate of the change '
+                           'in the trait measure per one standard deviation higher PRS assuming a linear correlation.',
+                           size='s')
+
         self._spacing('s')
 
         table_dict = {'Ancestry': list(), 'PRS data source': list()}
         for metric in self.metrics:
-            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} (LCI, UCI)'] = list()
+            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} \n(LCI, UCI)'] = list()
 
         for ancestry in self.all_ancestries:
             for source in self.data_sources:
@@ -326,11 +336,11 @@ class UkbPretReport(FPDF):
                     table_dict['PRS data source'].append(source)
                     for metric in self.metrics:
                         if not self.results['evaluation'][source][self.sex_major][ancestry]['metrics'][metric]['value']:
-                            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} (LCI, UCI)'].append(
+                            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} \n(LCI, UCI)'].append(
                                 'N/A'
                             )
                         else:
-                            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} (LCI, UCI)'].append(
+                            table_dict[f'{REPORT_METRIC_MAPPINGS[metric]} \n(LCI, UCI)'].append(
                                 self._format_metric(source, self.sex_major, ancestry, metric))
 
             # TODO: Add checks to ensure df contains what is expected...
@@ -352,24 +362,25 @@ class UkbPretReport(FPDF):
                        f'')
 
     def _format_table_dict(self, schema: dict, metric: str, precision: int = None):
-        table_dict = {'Ancestry': list(), 'Data Source': list(), 'Sex': list()}
+        table_dict = {'Ancestry': list(), 'Sex': list()}
         for key in schema.keys():
             table_dict[key] = list()
         for ancestry in self.all_ancestries:
             for sex in self.all_sexes:
-                for data_source in self.results['evaluation']:
-                    if sex in self.results['evaluation'][data_source].keys():
-                        if ancestry in self.results['evaluation'][data_source][sex].keys():
-                            table_dict['Ancestry'].append(ancestry)
-                            table_dict['Data Source'].append(data_source)
-                            table_dict['Sex'].append(sex)
-                            for table_key, result_key in schema.items():
-                                table_dict[table_key].append(
-                                    self._format_sumstats(data_source, sex, ancestry, metric, result_key, precision))
+                dummy_data_source = list(self.results['evaluation'].keys())[0]
+                if sex in self.results['evaluation'][dummy_data_source].keys():
+                    if ancestry in self.results['evaluation'][dummy_data_source][sex].keys():
+                        table_dict['Ancestry'].append(ancestry)
+                        table_dict['Sex'].append(sex)
+                        for table_key, result_key in schema.items():
+                            table_dict[table_key].append(
+                                self._format_sumstats(dummy_data_source, sex, ancestry, metric, result_key, precision))
         return table_dict
 
     def eval_plots(self):
-        self.ukb_pret_title('Evaluation plots', size='title2', spacing_size='sn')
+        self.ukb_pret_title('Evaluation plots', size='title2', spacing_size='vs')
+        self.paragraph(f"Evaluation plots comparing user-provided data {self.data_sources[0]} against "
+                       f"UK Biobank PRS Release {self.data_sources[1]}")
         if len(self.results['evaluation'].keys()) != 2:
             raise AssertionError('Evaluation report can only be generated for comparing 2 PRS')
 
@@ -403,7 +414,7 @@ class UkbPretReport(FPDF):
                     self.next_page()
 
     def quantitative_eval_plots(self):
-        box_plot_risk_description = f"Box plots in different PRS risk groups for phenotype " \
+        box_plot_risk_description = f"Box plots in different PRS groups for phenotype " \
                                     f"{self.results['phenotype_code']} " \
                                      "in genetically inferred ancestry {}"
         box_plot_deciles_description = f"Box plots in PRS deciles for phenotype {self.results['phenotype_code']} " \
@@ -415,7 +426,10 @@ class UkbPretReport(FPDF):
             self.next_page()
 
     def qc_eval_plots(self):
-        self.ukb_pret_title('Quality Control Report', size='title2', spacing_size='sn')
+        self.ukb_pret_title('Quality Control Report', size='title2', spacing_size='s')
+        self.paragraph(f"QC plots comparing user-provided data {self.data_sources[0]} against "
+                       f"UK Biobank PRS Release {self.data_sources[1]}")
+        self._spacing('s')
         prs_hist_description = f"PRS density distribution for phenotype {self.results['phenotype_code']} split by " \
                                f"genetically inferred ancestry"
         prs_box_plot_description = f"PRS box plot distributions for phenotype {self.results['phenotype_code']} " \
@@ -427,7 +441,7 @@ class UkbPretReport(FPDF):
 
         if self._contains_pc_plots():
 
-            generic_title = f"PRS against genetically inferred principal components for phenotype " \
+            generic_title = f"PRS against genetic principal components for phenotype " \
                             f"{self.results['phenotype_code']}"
             subtitle = "Each coloured point represents an individual, coloured by their genetically inferred " \
                        "ancestry grouping. Each black dot is an equal-width binned mean shown with a 95% confidence " \
@@ -448,7 +462,7 @@ class UkbPretReport(FPDF):
     def cross_ancestry_eval_plots(self, source):
 
         if not all(len(sex_data.keys()) == 1 for sex_data in self.results['evaluation'][source].values()):
-            self.ukb_pret_title('Cross-Ancestry evaluation plots', size='title3', spacing_size='r')
+            self.ukb_pret_title('Cross-Ancestry evaluation plots', size='title3', spacing_size='s')
         for sex_data in self.results['cross_ancestry_evaluation'][source].values():
             for plot in sex_data['plots'].values():
                 self.ukb_pret_title(plot['description'], size='title3', spacing_size='n')
@@ -487,9 +501,9 @@ class UkbPretReport(FPDF):
         self.ukb_pret_title(title, size='r', spacing_size='s')
         self.set_font('poppins', '')
         prev_y = self.y
-        self.image(plot_dict_1['path'], w=self.epw * 0.45)  # third page height, 2/5 page width
+        self.image(plot_dict_1['path'], w=self.epw * 0.44)  # third page height, 2/5 page width
         self.set_y(prev_y)
-        self.image(plot_dict_2['path'], w=self.epw * 0.45,
+        self.image(plot_dict_2['path'], w=self.epw * 0.44,
                    x=self.epw / 2)  # full page height, half page width, right half of the page
 
     def _contains_pc_plots(self, sex: str = None) -> bool:
@@ -508,9 +522,9 @@ class UkbPretReport(FPDF):
             return False
 
     def _format_metric(self, source: str, sex: str, ancestry: str, metric: str = 'discrimination'):
-        return (f"{self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['value']:.4} "
-                f"({self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['lci']:.4},"
-                f" {self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['uci']:.4})")
+        return (f"{self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['value']:.3} \n"
+                f"({self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['lci']:.3},"
+                f" {self.results['evaluation'][source][sex][ancestry]['metrics'][metric]['uci']:.3})")
 
     def _format_sumstats(self, source: str, sex: str, ancestry: str, metric: str, result_key: str,
                          precision: int = None):
@@ -521,5 +535,5 @@ class UkbPretReport(FPDF):
 
     def _spacing(self, size='r'):
         """Library for supported line spacing options"""
-        size_dict = {'l': 40, 'r': 20, 'n': 12, 'sn': 10, 's': 8}
+        size_dict = {'l': 40, 'r': 20, 'n': 12, 'sn': 10, 's': 8, 'vs': 4}
         self.ln(size_dict[size])
