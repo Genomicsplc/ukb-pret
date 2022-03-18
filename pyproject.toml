@@ -23,6 +23,8 @@ fpdf2 = "^2.4.6"
 seaborn = "^0.11.2"
 
 [tool.poetry.dev-dependencies]
+pytest = "^4.0"
+pytest-cov = "^2.0"
 
 [[tool.poetry.source]]
 name = 'genomics'
@@ -30,7 +32,6 @@ url = 'https://artifactory.genomicsplc.com/api/pypi/pypi-local/simple'
 
 [tool.poetry.scripts]
 evaluate-prs = 'ukb_pret.cli:main'
-
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
