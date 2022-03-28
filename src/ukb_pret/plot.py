@@ -65,7 +65,7 @@ def plot_roc_curve(df_dict: Dict[str, pandas.DataFrame], output_path: str, pheno
                   legend_position="none",
                   strip_background=pn.element_rect(fill="white"),
                   strip_text=pn.element_text(colour='black')) +
-         pn.geom_text(pn.aes(x='x', y='y', color='model', label='label'), data=text_annot, ha='left', size=8) +
+         pn.geom_text(pn.aes(x='x', y='y', color='model', label='label'), data=text_annot, ha='left', size=12) +
          pn.labs(title=prs_column,
                  x="False Positive Rate (1-Specificity)", y="True Positive Rate (Sensitivity)"))
 
@@ -193,12 +193,12 @@ def _prepare_risk_groups(df: pandas.DataFrame, data_column_name: str):
     df['risk_group'] = numpy.nan
     prs_quantiles = list(df[data_column_name].quantile([0.03, 0.4, 0.6, 0.97, 0.99]))
 
-    df.loc[(df[data_column_name] <= prs_quantiles[0]), 'risk_group'] = 'Top 3% protected'
+    df.loc[(df[data_column_name] <= prs_quantiles[0]), 'risk_group'] = 'Top 3% Protected'
     df.loc[((df[data_column_name] >= prs_quantiles[1]) &
-            (df[data_column_name] <= prs_quantiles[2])), 'risk_group'] = 'Average risk'
+            (df[data_column_name] <= prs_quantiles[2])), 'risk_group'] = 'Median Distribution'
     df.loc[((df[data_column_name] >= prs_quantiles[3]) &
-            (df[data_column_name] <= prs_quantiles[4])), 'risk_group'] = 'Top 3% risk'
-    df.loc[(df[data_column_name] > prs_quantiles[4]), 'risk_group'] = 'Top 3% risk'
+            (df[data_column_name] <= prs_quantiles[4])), 'risk_group'] = 'Top 3% PRS'
+    df.loc[(df[data_column_name] > prs_quantiles[4]), 'risk_group'] = 'Top 3% PRS'
     df = df[df.risk_group.notnull()]
     return df
 
@@ -245,8 +245,7 @@ def _plot_cumulative_incidence(kmfdf: pandas.DataFrame, trait_code: str, output_
          pn.labs(title=prs_column_name))
 
     fwidth, fheight = (6.5, 6)
-    p.save(filename=output_path,
-           height=fheight, width=fwidth, units='in', dpi=200, verbose=False)
+    p.save(filename=output_path, height=fheight, width=fwidth, units='in', dpi=200, verbose=False)
 
 
 def generate_quantitative_plots(df: pandas.DataFrame, trait_code: str,
@@ -287,10 +286,10 @@ def _plot_box_plot_risk_groups(df: pandas.DataFrame, output_path: str, data_colu
     """
 
     prs_percentiles = list(df[data_column_name].quantile([0.03, 0.4, 0.6, 0.97]))
-    df.loc[(df[data_column_name] <= prs_percentiles[0]), 'risk_group'] = 'Top 3% protected'
+    df.loc[(df[data_column_name] <= prs_percentiles[0]), 'risk_group'] = 'Top 3% Protected'
     df.loc[((df[data_column_name] > prs_percentiles[1]) & (df[data_column_name] <= prs_percentiles[2])),
-           'risk_group'] = 'Average risk'
-    df.loc[(df[data_column_name] > prs_percentiles[3]), 'risk_group'] = 'Top 3% risk'
+           'risk_group'] = 'Median Distribution'
+    df.loc[(df[data_column_name] > prs_percentiles[3]), 'risk_group'] = 'Top 3% PRS'
 
     seaborn.set(font_scale=1.2)
     seaborn.set_style("ticks")
@@ -298,7 +297,7 @@ def _plot_box_plot_risk_groups(df: pandas.DataFrame, output_path: str, data_colu
     pyplot.rcParams["axes.labelsize"] = 17
 
     ctpyplot = seaborn.catplot(x="risk_group", y=trait_code, data=df, kind="box",
-                               order=['Top 3% protected', 'Average risk', 'Top 3% risk'],
+                               order=['Top 3% Protected', 'Median Distribution', 'Top 3% PRS'],
                                palette=seaborn.color_palette(['#53b24a', '#3a7bb8', '#e0001e']))
     ctpyplot.set_axis_labels("", trait_code + ' values')
     ctpyplot.set_titles(ancestry, size=18)
@@ -367,15 +366,23 @@ def plot_prs_binned(df: pandas.DataFrame, prs_column_name: str, bin_by, zoom=Non
     pcbins = _bin_prs(df, bin_by, prs=prs_column_name)
 
     alpha = 10 / len(df)**0.5
-    p = pn.ggplot(df, pn.aes(bin_by, prs_column_name, colour="ancestry")) + \
-        pn.geom_hline(yintercept=0, linetype='dashed') + \
-        pn.geom_point(alpha=alpha) + \
-        pn.guides(colour=pn.guide_legend(override_aes={'alpha': 1})) + \
-        pn.scale_colour_brewer(type="qual", palette="Set1") + \
-        pn.geom_smooth(method='lm', colour='blue') + \
-        pn.geom_pointrange(data=pcbins, mapping=pn.aes(f'bin_mean', 'prs_mean', ymin='prs_lci', ymax='prs_uci'),
-                           colour='black') + \
-        pn.labs(title=prs_column_name)
+    base_size = 24
+    basic_theme = (pn.theme_bw(base_size=base_size) +
+                   pn.theme(plot_title=pn.element_text(size=base_size + 4, face="plain"),
+                            legend_title=pn.element_blank(),
+                            legend_text=pn.element_text(size=base_size - 4),
+                            axis_title=pn.element_text(size=base_size, face="plain", hjust=0.5),
+                            axis_text=pn.element_text(size=base_size)))
+    p = (pn.ggplot(df, pn.aes(bin_by, prs_column_name, colour="ancestry")) +
+         pn.geom_hline(yintercept=0, linetype='dashed') +
+         pn.geom_point(alpha=alpha) +
+         pn.guides(colour=pn.guide_legend(override_aes={'alpha': 1})) +
+         pn.scale_colour_brewer(type="qual", palette="Set1") +
+         pn.geom_smooth(method='lm', colour='blue') +
+         pn.geom_pointrange(data=pcbins, mapping=pn.aes(f'bin_mean', 'prs_mean', ymin='prs_lci', ymax='prs_uci'),
+                            colour='black') +
+         basic_theme +
+         pn.labs(title=prs_column_name))
     if zoom is not None:
         p = p + pn.coord_cartesian(ylim=(-zoom, zoom))
     return p
@@ -399,7 +406,9 @@ def _bin_prs(df, bin_by: str, prs: str = 'prs_centered'):
 
 def prepare_and_plot_genetic_pcs_binned_by_prs(df: pandas.DataFrame, prs_column_name: str, pc_column_name: str,
                                                output_path: str, sex: str = 'both'):
-    _plot_genetic_pcs_binned_by_prs(df, prs_column_name, pc_column_name, output_path)
+    # Remove data with nan ancestry
+    filtered_df = df[~df['ancestry'].isna()].copy()
+    _plot_genetic_pcs_binned_by_prs(filtered_df, prs_column_name, pc_column_name, output_path)
     description = f'Plot displaying the binned PRS against genetically inferred principal component {pc_column_name},' \
                   f' with data coloured by genetically inferred ancestry (sex: {sex})'
     return {'path': output_path, 'description': description}
@@ -427,7 +436,8 @@ def _plot_genetic_pcs_binned_by_prs(df: pandas.DataFrame, prs_column_name: str, 
 
 def _plot_prs_histogram_per_ancestry(df: pandas.DataFrame, prs_column_name: str, output_path: str):
 
-    pyplot.rcParams['axes.labelsize'] = 16
+    pyplot.rcParams['axes.labelsize'] = 20
+    pyplot.rcParams['legend.title_fontsize'] = 24
     pyplot.clf()
     pyplot.figure(figsize=(10, 7))
     ancestries = list(df['ancestry'].unique())
@@ -441,18 +451,18 @@ def _plot_prs_histogram_per_ancestry(df: pandas.DataFrame, prs_column_name: str,
                         label=anc)
         pyplot.axvline(df_a[prs_column_name].mean(), linestyle="--", color='grey')
 
-    pyplot.xticks(fontsize=16)
-    pyplot.yticks(fontsize=16)
-    pyplot.legend(prop={'size': 16}, title='Ancestry')
-    pyplot.xlabel('PRS')
-    pyplot.ylabel('Density')
-    pyplot.title(prs_column_name)
-    pyplot.savefig(output_path, bbox_inches='tight', dpi=500)
+    pyplot.xticks(fontsize=20)
+    pyplot.yticks(fontsize=20)
+    pyplot.legend(prop={'size': 20}, title='Ancestry')
+    pyplot.xlabel('PRS', size=24)
+    pyplot.ylabel('Density', size=24)
+    pyplot.title(prs_column_name, size=28)
+    pyplot.savefig(output_path, bbox_inches='tight', dpi=300)
     pyplot.close()
 
 
 def _plot_prs_box_plot_per_ancestry(df: pandas.DataFrame, prs_column_name: str, output_path: str):
-    pyplot.rcParams['axes.labelsize'] = 16
+    pyplot.rcParams['axes.labelsize'] = 20
     pyplot.clf()
     pyplot.figure(figsize=(10, 7))
     ancestries = list(df['ancestry'].unique())
@@ -460,8 +470,12 @@ def _plot_prs_box_plot_per_ancestry(df: pandas.DataFrame, prs_column_name: str, 
     seaborn.set_style('ticks')
     ctplt = seaborn.catplot(x='ancestry', y=prs_column_name, data=df, kind='box',
                             palette={k: v for k, v in zip(ancestries, PLOT_COLOURS[0:len(ancestries)])})
-    ctplt.set_axis_labels('Ancestry', 'PRS distribution')
-    pyplot.title(prs_column_name)
-    pyplot.savefig(output_path, bbox_inches='tight', dpi=500)
+    # ctplt.set_axis_labels('Ancestry', 'PRS distribution')
+    pyplot.xticks(fontsize=18)
+    pyplot.yticks(fontsize=20)
+    pyplot.xlabel('Ancestry', size=24)
+    pyplot.ylabel('PRS distribution', size=24)
+    pyplot.title(prs_column_name, size=24)
+    pyplot.savefig(output_path, bbox_inches='tight', dpi=300)
     pyplot.close()
     pyplot.style.use('default')

@@ -48,7 +48,7 @@ def build_parser():
     parser.add_argument('--prs-files',
                         nargs='+',
                         required=True,
-                        help='Paths to files containing Polygenic Risk Score (PRS) and '
+                        help='Paths to two files containing Polygenic Risk Score (PRS) and '
                              'participant eIDs in CSV format. Headers should be [eid,<data_tag>], '
                              'where <data_tag> is the field used to identify the PRS in the output')
     parser.add_argument('--pheno-file',

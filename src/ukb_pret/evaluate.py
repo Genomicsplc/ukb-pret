@@ -37,6 +37,8 @@ def read_and_prepare_data(prs_file_path1: str, prs_file_path2: str, pheno_file_p
     meta_dict1['n_included_samples'] = {'value': len(df1),
                                         'description': f'Total number of included samples: {len(df1)}'}
 
+    meta_dict1 = _add_total_removed_from_prs(meta_dict1)
+
     meta_dict2['n_removed_from_input_intersection'] = {'value': n_removed_from_sample_intersection2,
                                                        'description': f'Number removed after intersection with the '
                                                                       f'other PRS data: '
@@ -44,7 +46,16 @@ def read_and_prepare_data(prs_file_path1: str, prs_file_path2: str, pheno_file_p
     meta_dict2['n_included_samples'] = {'value': len(df2),
                                         'description': f'Total number of included samples: {len(df2)}'}
 
+    meta_dict2 = _add_total_removed_from_prs(meta_dict2)
     return df1, df2, meta_dict1, meta_dict2
+
+
+def _add_total_removed_from_prs(meta_dict: dict) -> dict:
+    n_prs_missing_tot = meta_dict['n_removed_prs']['value'] + meta_dict['n_removed_from_ukb_wbu_filtering']['value'] \
+                     + meta_dict['n_removed_from_input_intersection']['value']
+    meta_dict['n_removed_prs_tot'] = {'value': n_prs_missing_tot,
+                                      'description': f'Number of excluded PRS samples: {n_prs_missing_tot}'}
+    return meta_dict
 
 
 def independent_sample_filtering(prs_file: str, pheno_file_path: str, trait_code: str,
@@ -63,7 +74,8 @@ def independent_sample_filtering(prs_file: str, pheno_file_path: str, trait_code
 
     df, n_removed_from_ukb_wbu_filtering = _filter_to_ukb_wbu_testing(df)
     meta_dict = {'n_removed_prs': {'value': n_prs_missing,
-                                   'description': f'Number of excluded PRS samples: {n_prs_missing}'},
+                                   'description': f'Number of excluded PRS samples from overlap with :'
+                                                  f' {n_prs_missing}'},
                  'n_removed_pheno': {'value': n_pheno_missing,
                                      'description': f'Number of excluded phenotype samples: {n_pheno_missing}'},
                  'n_input_samples': {'value': n_input_samples,
