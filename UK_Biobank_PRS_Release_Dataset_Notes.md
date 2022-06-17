@@ -11,8 +11,8 @@ This document contains notes regarding the UK Biobank PRS Release data
 ## Original Release Notes
 
 This Return-of-Results package relates to the following paper:
-Selzam et al. (2022). UK Biobank release and systematic evaluation of polygenic risk scores for 53 diseases and
-quantitative traits. Submitted.
+Thompson et al. (2022). UK Biobank release and systematic evaluation of optimised polygenic risk scores for 53 diseases and
+quantitative traits. https://www.medrxiv.org/content/10.1101/2022.06.16.22276246v1
 
 The results data were generated under UK Biobank project number 9659 (under its extension to therapeutic applications).
 
@@ -37,7 +37,7 @@ to the paper.
 The Release is packaged as a series of data files, with fields as described below.
 
 #### DATA
-PRS genetic principle components – field 26201  
+PRS genetic principal components – field 26201  
 In UKB WBU PRS testing set – field 26200  
 PRS fields:  
 One for each trait and PRS type (Category 302 - Enhanced (also known as UKB-WBU) and Category 301 - Standard (also known as UKB-Free)))
