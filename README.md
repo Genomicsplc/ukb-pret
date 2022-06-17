@@ -3,15 +3,15 @@
 This repository contains the source code for the UK Biobank PRS Evaluation Tool developed by Genomics plc as part of
 the Thompson et al publication https://www.medrxiv.org/content/10.1101/2022.06.16.22276246v1.
 
-This tool will be made available via the [UK Biobank Research Analysis Platform](https://www.ukbiobank.ac.uk/enable-your-research/research-analysis-platform)
-and may be used to compare the performance of Polygenic Scores against the models published in Thompson et al.
+This tool will be made available via the [UK Biobank Research Analysis Platform](https://www.ukbiobank.ac.uk/enable-your-research/research-analysis-platform) and may be used to compare the performance of Polygenic Scores against the models published in Thompson et al.
 
 You may only use this tool under the terms of the [licence](LICENCE).
 
 ## Introduction
 
 `ukb-pret` is a software package that will evaluate and compare an input PRS against the scores and phenotypes 
-published in the UK Biobank PRS Release. All evaluation metrics are calculated in the UKB_WBU testing set.
+published in the UK Biobank PRS Release.
+In order to enable like-for-like performance evaluation for different PRSs for the same disease or trait, all evaluation metrics are calculated in the multi-ancestry UK Biobank PRS Release Testing subgroup.
 
 
 ## Usage
@@ -26,8 +26,7 @@ plots describing the data. A CSV report of the metrics is also produced.
 
 ### Running the tool locally
 
-`ukb-pret` can be run and installed locally to compare any two PRS for UKB individuals, evaluated in the UKB_WBU 
-testing set. 
+`ukb-pret` can be run and installed locally to compare any two PRS for UKB individuals, evaluated in the UK Biobank PRS Release Testing subgroup. 
 
 #### Installation 
 
