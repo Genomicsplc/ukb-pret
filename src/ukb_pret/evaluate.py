@@ -3,29 +3,34 @@ Evaluations and comparisons of PRS
 """
 
 import logging
+import numpy
 import os
 import pandas
+from scipy.special import softmax
+from sklearn.metrics.pairwise import cosine_similarity
 from typing import Tuple
 
-from ._io import read_prs_file, read_pheno_file, read_ancestry_file, read_principal_components_file, \
-    resolve_column_header
+from ._io import read_prs_file, read_pheno_file, read_principal_components_file, \
+    resolve_column_header, read_pop_cluster_centers
 from .calculate import calculate_binary_metrics, calculate_quantitative_metrics, calculate_prs_sumstats, \
     calculate_sample_information
-from .constants import ANCESTRY_MAPPINGS, SEX_MAPPING, SUPPORTED_PC_HEADERS, MIN_EVALUATION_SAMPLES_PER_GROUP,\
-    BINARY_METRIC_KEYS, QUANTITATIVE_METRIC_KEYS
+from .constants import SEX_MAPPING, SUPPORTED_PC_HEADERS, MIN_EVALUATION_SAMPLES_PER_GROUP,\
+    BINARY_METRIC_KEYS, QUANTITATIVE_METRIC_KEYS, POPULATION_CLUSTER_CENTRES_PATH, SOFTMAX_BETA
 from .error import UkbPretImportError
 from .plot import generate_binary_plots, generate_quantitative_plots, generate_cross_ancestry_plots
 
 
 def read_and_prepare_data(prs_file_path1: str, prs_file_path2: str, pheno_file_path: str,
-                          trait_code: str, phenotype_dict: dict, ancestry_file_path: str,
-                          pcs_file_path: str) -> Tuple[pandas.DataFrame, pandas.DataFrame, dict, dict]:
+                          trait_code: str, phenotype_dict: dict, pcs_file_path: str
+                          ) -> Tuple[pandas.DataFrame, pandas.DataFrame, dict, dict]:
     """Loads and prepares the input DataFrames from csv files. Returns the dataframes and dictionary of metadata"""
 
+    pop_cluster_centers = read_pop_cluster_centers(POPULATION_CLUSTER_CENTRES_PATH)
+
     df1, meta_dict1 = independent_sample_filtering(prs_file_path1, pheno_file_path, trait_code,
-                                                   phenotype_dict, ancestry_file_path, pcs_file_path)
+                                                   phenotype_dict, pop_cluster_centers, pcs_file_path)
     df2, meta_dict2 = independent_sample_filtering(prs_file_path2, pheno_file_path, trait_code,
-                                                   phenotype_dict, ancestry_file_path, pcs_file_path)
+                                                   phenotype_dict, pop_cluster_centers, pcs_file_path)
 
     df1, df2, n_removed_from_sample_intersection1, n_removed_from_sample_intersection2 = \
         _filter_to_input_data_intersection(df1, df2)
@@ -58,8 +63,30 @@ def _add_total_removed_from_prs(meta_dict: dict) -> dict:
     return meta_dict
 
 
+def _infer_ancestry_from_pcs(df: pandas.DataFrame, pop_cluster_centres: pandas.DataFrame) -> pandas.DataFrame:
+
+    if not all(pc in df.columns for pc in SUPPORTED_PC_HEADERS):
+        return df
+
+    # Calculate the cosine similarity between the population PC centers and the input PC data
+    ancestries = pop_cluster_centres.index.values
+    pc_data = df[SUPPORTED_PC_HEADERS]
+    cos_sim = cosine_similarity(pc_data, pop_cluster_centres)
+    proj_proportion = softmax(cos_sim * SOFTMAX_BETA, axis=1)
+
+    proj_pred_ancestry = numpy.array([ancestries[i] for i in proj_proportion.argmax(axis=1)], dtype='object')
+    proj_pred_ancestry_df = pandas.DataFrame(index=df.index, data=proj_pred_ancestry,
+                                             columns=['ancestry']).rename_axis(index='eid')
+
+    # Remove AMR due to insufficient samples in UKB
+    proj_pred_ancestry_df = proj_pred_ancestry_df[proj_pred_ancestry_df['ancestry'] != 'AMR']
+    df_with_ancestry = df.join(proj_pred_ancestry_df)
+    return df_with_ancestry
+
+
 def independent_sample_filtering(prs_file: str, pheno_file_path: str, trait_code: str,
-                                 phenotype_dict: dict, ancestry_file_path: str, pcs_file_path: str):
+                                 phenotype_dict: dict, pop_cluster_centers: pandas.DataFrame, pcs_file_path: str):
+
     prs_column_name = resolve_column_header(prs_file)
     prs_df = read_prs_file(prs_file, prs_column_name)
     n_input_samples = len(prs_df)
@@ -69,8 +96,8 @@ def independent_sample_filtering(prs_file: str, pheno_file_path: str, trait_code
     prs_df, pheno_df, n_prs_missing, n_pheno_missing = _filter_null_values(prs_df, pheno_df, trait_code)
 
     df = prs_df.join(pheno_df, on=prs_df.index)
-    df = _prepare_ancestry_data(df, ancestry_file_path)
     df = _prepare_pcs_data(df, pcs_file_path)
+    df = _infer_ancestry_from_pcs(df, pop_cluster_centers)
 
     df, n_removed_from_ukb_wbu_filtering = _filter_to_ukb_wbu_testing(df)
     meta_dict = {'n_removed_prs': {'value': n_prs_missing,
@@ -175,21 +202,10 @@ def quantitative_evaluation(df: pandas.DataFrame, eval_dict: dict,
     return eval_dict
 
 
-def _prepare_ancestry_data(df: pandas.DataFrame, ancestry_file_path: str):
-    if ancestry_file_path is None:
-        return df
-    else:
-        ancestry_df = read_ancestry_file(ancestry_file_path).dropna()
-        for key, value in ANCESTRY_MAPPINGS.items():
-            ancestry_df = ancestry_df.replace(key, value)
-        # Remove AMR_NAT (too few samples)
-        ancestry_df = ancestry_df[ancestry_df['ancestry'] != 'AMR']
-        df_with_ancestry = df.join(ancestry_df)
-        return df_with_ancestry
-
-
 def _prepare_pcs_data(df: pandas.DataFrame, pcs_file_path: str):
     if pcs_file_path is None:
+        logging.warn('No Principal Component (PC) file provided - analysis will be carried out across all individuals '
+                     'and there will be no quality control section.')
         return df
     else:
         # Prepare ancestry data

@@ -3,7 +3,7 @@ import pandas
 import unittest
 
 from ukb_pret.error import UkbPretImportError
-from ukb_pret.evaluate import _get_overlapping_results, _filter_null_values
+from ukb_pret.evaluate import _get_overlapping_results, _filter_null_values, _infer_ancestry_from_pcs
 
 
 def generate_prs_data():
@@ -19,6 +19,20 @@ def generate_binary_pheno_data():
 def generate_quantitative_pheno_data():
     quant_dict = {'eid': ['FK1', 'FK2', 'FK3'], 'LDL': [50.32, 90, -999999999.12345]}
     return pandas.DataFrame.from_dict(quant_dict).set_index('eid')
+
+
+def generate_pc_data():
+    pc_dict = {'eid': ['FK1', 'FK2', 'FK3'],
+               'pc1': [0.5, 0.5, 0.5],
+               'pc2': [-0.3, 0.3, 0.7],
+               'pc3': [0.1, 0.3, 0.5],
+               'pc4': [0.7, -0.7, 0.0],
+               }
+    return pandas.DataFrame.from_dict(pc_dict).set_index('eid')
+
+
+def generate_custom_df(*args):
+    return pandas.concat([x() for x in args], axis=1)
 
 
 class TestEvaluate(unittest.TestCase):
@@ -51,3 +65,14 @@ class TestEvaluate(unittest.TestCase):
         self.assertEqual(n_pheno, 2)
         self.assertDictEqual(out_prs.to_dict(), generate_prs_data().to_dict())
         self.assertDictEqual(out_pheno.to_dict(), generate_binary_pheno_data().to_dict())
+
+    def test_infer_ancestry_from_pcs(self):
+        df = generate_custom_df(generate_prs_data, generate_binary_pheno_data, generate_pc_data)
+        pop_clusters = pandas.DataFrame({'population': ['AFR', 'AMR', 'EAS', 'EUR', 'SAS'],
+                                         'pc1': [0.5, 0.4, 0.3, 0.2, 0.1],
+                                         'pc2': [0.1, 0.2, 0.3, 0.4, 0.5],
+                                         'pc3': [-0.5, -0.4, -0.3, -0.2, -0.1],
+                                         'pc4': [-0.1, -0.2, -0.3, -0.4, -0.5]}).set_index('population')
+        new_df = _infer_ancestry_from_pcs(df, pop_clusters)
+        expected_ancestries = {'FK1': 'AFR', 'FK2': 'SAS', 'FK3': 'SAS'}
+        self.assertDictEqual(new_df['ancestry'].to_dict(), expected_ancestries)
