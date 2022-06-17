@@ -4,8 +4,8 @@ This document contains notes regarding the UK Biobank PRS Release data
 
 ## Dataset release notes, issues and clarifications
 
-- All PRS in the release are meant to be centered. We note however that the prostate cancer PRS (standard version) has suboptimal centering properties. This issue will be fixed in the next release.
-- Both Crohn's disease and ulcerative colitis are primarily based on a relatively sparse ImmunoChip array. This sparsity complicated the meta-analysis process, leading to less effective enhanced PRS. For this reason, the enhanced version of the PRS is not provided for either of these two diseases.
+- All PRS in the release are meant to be centered. We note however that the prostate cancer PRS (Standard version) has suboptimal centering properties. This issue will be fixed in the next release.
+- Both Crohn's disease and ulcerative colitis are primarily based on a relatively sparse ImmunoChip array. This sparsity complicated the meta-analysis process, leading to less effective Enhanced PRS. For this reason, the Enhanced version of the PRS is not provided for either of these two diseases. Please use the Standard versions in lieu of the Enhanced versions.
 
 
 ## Original Release Notes
