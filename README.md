@@ -11,7 +11,7 @@ You may only use this tool under the terms of the [licence](LICENCE).
 
 `ukb-pret` is a software package that will evaluate and compare an input PRS against the scores and phenotypes 
 published in the UK Biobank PRS Release.
-In order to enable like-for-like performance evaluation for different PRSs for the same disease or trait, all evaluation metrics are calculated in the multi-ancestry UK Biobank PRS Release Testing subgroup
+In order to enable like-for-like performance evaluation for different PRSs for the same disease or trait, all evaluation metrics are calculated in the multi-ancestry UK Biobank PRS Release Testing subgroup.
 
 
 ## Usage
