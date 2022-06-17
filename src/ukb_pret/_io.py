@@ -5,12 +5,11 @@ Scripts for reading and writing PRS scores for evaluation
 from datetime import timedelta
 import logging
 import numpy
-import os
 import pandas
 import yaml
 
 from .constants import SUPPORTED_PHENOTYPE_HEADERS, BINARY_METRIC_FIELDS, QUANTITATIVE_METRIC_FIELDS, \
-    SUPPORTED_PC_HEADERS
+    SUPPORTED_PC_HEADERS, PHENOTYPE_TRAIT_DEFS_PATH
 
 
 def _load_csv_file(path: str, id_field: str = 'eid', delimiter: str = ','):
@@ -96,8 +95,7 @@ def _add_prevalent_data(df, trait_code):
 
 def load_phenotype_dictionary(trait_code: str):
     """Load supported phenotype definitions from file."""
-
-    traits = read_traits_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'traits.yaml'))
+    traits = read_traits_file(PHENOTYPE_TRAIT_DEFS_PATH)
     return traits[trait_code]
 
 
@@ -125,12 +123,10 @@ def read_pheno_file(input_path: str, pheno_field: str, phenotype_dict: dict,
     return df
 
 
-def read_ancestry_file(input_path: str, id_field: str = 'eid', delimiter: str = ','):
-    """Read an ancestry file [eid,ancestry] containing inferred ancestry"""
-
+def read_pop_cluster_centers(input_path: str, id_field: str = 'population', delimiter: str = '\t'):
     df = _load_csv_file(input_path, id_field, delimiter)
-    if 'ancestry' not in df.columns:
-        raise KeyError(f'Ancestry file must contain the headers [{id_field},ancestry].')
+    if not all(p in df.columns for p in SUPPORTED_PC_HEADERS):
+        raise KeyError(f'Population centre cluster files sould contain the headers {[id_field] + SUPPORTED_PC_HEADERS}.')
     return df
 
 
