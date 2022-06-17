@@ -40,8 +40,7 @@ into your terminal:
 
 ```
 usage: evaluate-prs [-h] --prs-files PRS_FILES [PRS_FILES ...] --pheno-file
-                    PHENO_FILE [--ancestry-file ANCESTRY_FILE]
-                    [--pcs-file PCS_FILE] [--output-dir OUTPUT_DIR]
+                    PHENO_FILE [--pcs-file PCS_FILE] [--output-dir OUTPUT_DIR]
                     [--list-phenotypes]
 
 A CLI tool for evaluating a set of PRS against a set of phenotypes.
@@ -49,10 +48,11 @@ A CLI tool for evaluating a set of PRS against a set of phenotypes.
 optional arguments:
   -h, --help            show this help message and exit
   --prs-files PRS_FILES [PRS_FILES ...]
-                        Paths to files containing Polygenic Risk Score (PRS)
-                        and participant eIDs in CSV format. Headers should be
-                        [eid,<data_tag>], where <data_tag> is the field used
-                        to identify the PRS in the output
+                        Paths to two files, each containing Polygenic Risk
+                        Score (PRS) and participant eIDs in CSV format.
+                        Headers should be [eid,<data_tag>], where <data_tag>
+                        is the field used to identify the PRS in the output
+                        (REQUIRED)
   --pheno-file PHENO_FILE
                         Paths to a file containing phenotype data and
                         participant eIDs in CSV format. Headers should contain
@@ -64,16 +64,16 @@ optional arguments:
                         analysis in binary traits: ['age_at_first_assessment',
                         'date_of_diagnosis', 'date_of_first_assessment',
                         'date_of_death', 'incident', 'sex',
-                        'in_ukb_wbu_testing']
-  --ancestry-file ANCESTRY_FILE
-                        Path to a file containing inferred ancestry labels and
-                        participant. Headers should be [eid,ancestry]
+                        'in_ukb_wbu_testing'] (REQUIRED)
   --pcs-file PCS_FILE   Path to a file containing the first 4 genetically
                         inferred principal components. Headers should be
-                        [eid,pc1,pc2,pc3,pc4]
+                        [eid,pc1,pc2,pc3,pc4] (OPTIONAL) (when omitted,
+                        evaluation is carried out across all ancestries & the
+                        report does not contain a quality control section)
   --output-dir OUTPUT_DIR
                         Output directory for evaluation report and CSV
-                        containing metrics
+                        containing metrics (OPTIONAL) (default is current
+                        working directory)
   --list-phenotypes     List supported Genomics plc phenotype definitions
 ```
 
