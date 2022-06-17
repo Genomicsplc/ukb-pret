@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ukb-pret"
-version = "0.0.2"
+version = "0.1.0"
 description = "UK Biobank PRS Release Evaluation Tool"
 authors = ["Genomics plc <info@genomicsplc.com>"]
 license = "BSD-3-Clause"
