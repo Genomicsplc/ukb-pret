@@ -48,9 +48,9 @@ def build_parser():
     parser.add_argument('--prs-files',
                         nargs='+',
                         required=True,
-                        help='Paths to two files containing Polygenic Risk Score (PRS) and '
+                        help='Paths to two files, each containing Polygenic Risk Score (PRS) and '
                              'participant eIDs in CSV format. Headers should be [eid,<data_tag>], '
-                             'where <data_tag> is the field used to identify the PRS in the output')
+                             'where <data_tag> is the field used to identify the PRS in the output (REQUIRED)')
     parser.add_argument('--pheno-file',
                         required=True,
                         help='Paths to a file containing phenotype data and participant '
@@ -59,17 +59,16 @@ def build_parser():
                              'where <trait_code> matches a Genomics plc phenotype definition '
                              '(type "evaluate-prs --list-phenotypes" for supported '
                              'phenotypes). Additionally, this file can include the following columns to enable '
-                             f'survival analysis in binary traits: {SUPPORTED_PHENOTYPE_HEADERS}')
-    parser.add_argument('--ancestry-file',
-                        required=False,
-                        default=None,
-                        help='Path to a file containing inferred ancestry labels and participant. Headers should be '
-                             '[eid,ancestry]')
+                             f'survival analysis in binary traits: {SUPPORTED_PHENOTYPE_HEADERS} (REQUIRED)')
     parser.add_argument('--pcs-file', required=False, default=None,
                         help='Path to a file containing the first 4 genetically inferred principal components. '
-                             'Headers should be [eid,pc1,pc2,pc3,pc4]')
+                             'Headers should be [eid,pc1,pc2,pc3,pc4] (OPTIONAL) (when omitted, evaluation is '
+                             'carried out across all ancestries & the report does not contain a '
+                             'quality control section)')
     parser.add_argument('--output-dir', required=False, default='.', help='Output directory for evaluation '
-                                                                          'report and CSV containing metrics')
+                                                                          'report and CSV containing metrics'
+                                                                          ' (OPTIONAL) (default is '
+                                                                          'current working directory)')
     parser.add_argument('--list-phenotypes', action=ListPhenotypes, help='List supported Genomics plc '
                                                                          'phenotype definitions')
     return parser
@@ -90,8 +89,7 @@ def run_from_command_line(argv: list = None):
     prs_file1, prs_file2 = args_dict['prs_files']
 
     df1, df2, meta_dict1, meta_dict2 = read_and_prepare_data(prs_file1, prs_file2, args_dict['pheno_file'], trait_code,
-                                                             phenotype_dictionary, args_dict['ancestry_file'],
-                                                             args_dict['pcs_file'])
+                                                             phenotype_dictionary, args_dict['pcs_file'])
 
     # Analyse prs_file1
     data_tag = resolve_column_header(prs_file1)
