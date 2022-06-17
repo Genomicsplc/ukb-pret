@@ -42,7 +42,7 @@ reference dataset using standard methods (Price et al, 2006) are provided in the
 In UKB WBU PRS testing set: indicator of participants in the UK Biobank PRS Release testing set
 
 #### PRS FILES (Enhanced (also known as UKB-WBU)) CONTENT DESCRIPTION
-prs: polygenic score for the trait for every participant in the UK Biobank testing set, as described in the paper
+prs: polygenic score for the trait for every participant in the UK Biobank PRS Release Testing subgroup, as described in the paper
 
 #### PRS FILES (Standard (also known as UKB-Free)) CONTENT DESCRIPTION
 prs: polygenic score for the trait for all UK Biobank participants, as described in the paper
