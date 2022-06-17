@@ -1,10 +1,10 @@
 # UK Biobank PRS Evaluation Tool
 
 This repository contains the source code for the UK Biobank PRS Evaluation Tool developed by Genomics plc as part of
-the publication [tbc - publication reference]
+the Thompson et al publication https://www.medrxiv.org/content/10.1101/2022.06.16.22276246v1.
 
 This tool will be made available via the [UK Biobank Research Analysis Platform](https://www.ukbiobank.ac.uk/enable-your-research/research-analysis-platform)
-and may be used to compare the performance of Polygenic Scores against the models published in Selzam et al.
+and may be used to compare the performance of Polygenic Scores against the models published in Thompson et al.
 
 You may only use this tool under the terms of the [licence](LICENCE).
 
