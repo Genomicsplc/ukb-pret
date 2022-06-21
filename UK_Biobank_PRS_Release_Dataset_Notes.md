@@ -16,8 +16,10 @@ This document contains notes regarding the UK Biobank PRS Release data
   relatedness). We compared PRS performance in individuals with and
   without relatedness to training and this did not measurably impact
   the evaluation (see
-  ![](img/excluded_vs_only_related_28k_binary.png?raw=true | width=250)). 
-  This will be fixed in the next release. Meanwhile, users keen to investigate further can identify separately individuals related to the WBU set (using the relatedness data field provuded by Bycroft et al).
+  ![](img/excluded_vs_only_related_28k_binary.png?raw=true)). 
+  This will be fixed in the next release. Meanwhile, users keen to
+  investigate further can identify individuals related to
+  the WBU set (using the relatedness file described in https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=531)
 
 
 ## Original Release Notes
