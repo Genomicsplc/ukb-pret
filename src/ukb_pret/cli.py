@@ -116,7 +116,7 @@ def construct_results_dict(eval_dict: dict, phenotype_dict: dict, cross_ancestry
     results = {'phenotype_code': trait_code,
                'phenotype_description': phenotype_dict['full_name'],
                'flavour': phenotype_dict['scale'],
-               'sex_major': phenotype_dict['gender'],
+               'sex_major': phenotype_dict['sex'],
                'evaluation': eval_dict,
                'cross_ancestry_evaluation': cross_ancestry_eval_dict,
                'metadata': meta_dict

@@ -123,8 +123,8 @@ def evaluate_prs(df: pandas.DataFrame, trait_code: str, prs_column_name: str, ph
     eval_func = _determine_evaluation_method(phenotype_dict['scale'])
 
     eval_dict, cross_ancestry_eval_dict = dict(), dict()
-    sexes_to_evaluate_in = ['both', 'female', 'male'] if phenotype_dict['gender'] == 'both' \
-        else [phenotype_dict['gender']]
+    sexes_to_evaluate_in = ['both', 'female', 'male'] if phenotype_dict['sex'] == 'both' \
+        else [phenotype_dict['sex']]
     for sex in sexes_to_evaluate_in:
         eval_dict[sex] = {}
         if sex == 'both':
@@ -251,7 +251,7 @@ def generate_quantitative_results(df: pandas.DataFrame, prs_column_name: str, tr
 
 def cross_ancestry_evaluation(df: pandas.DataFrame, prs_column_name: str, sex: str, phenotype_dict: dict,
                               output_dir: str):
-    if sex == phenotype_dict['gender']:
+    if sex == phenotype_dict['sex']:
         plots_dict = generate_cross_ancestry_plots(df, prs_column_name,
                                                    os.path.join(output_dir,
                                                                 'plots', f'{prs_column_name}_cross_ancestry'),

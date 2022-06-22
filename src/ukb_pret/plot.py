@@ -154,7 +154,7 @@ def generate_binary_plots(df: pandas.DataFrame, trait_code: str, data_column_nam
         os.mkdir(output_dir)
 
     plots_dict = dict()
-    if sex == phenotype_dict['gender']:
+    if sex == phenotype_dict['sex']:
         plots_dict['roc_curve'] = prepare_and_plot_roc(df, trait_code, data_column_name,
                                                        os.path.join(output_dir, 'roc_plot.png'), sex, ancestry)
     plots_dict['cum_inc'] = prepare_and_plot_cumulative_incidence(df, trait_code, data_column_name,
