@@ -1,265 +1,265 @@
 AAM:
   follow_up_months: 120
   full_name: Age at menopause
-  gender: female
+  sex: female
   scale: quantitative
 AD:
   follow_up_months: 120
   full_name: Alzheimer's disease
-  gender: both
+  sex: both
   scale: binary
 AF:
   follow_up_months: 120
   full_name: Atrial fibrillation
-  gender: both
+  sex: both
   scale: binary
 AMD:
   follow_up_months: 144
   full_name: Age-related macular degeneration
-  gender: both
+  sex: both
   scale: binary
 APOEA:
   follow_up_months: 120
   full_name: Apolipoprotein A
-  gender: both
+  sex: both
   scale: quantitative
 APOEB:
   follow_up_months: 120
   full_name: Apolipoprotein B
-  gender: both
+  sex: both
   scale: quantitative
 AST:
   follow_up_months: 120
   full_name: Asthma
-  gender: both
+  sex: both
   scale: binary
 BC:
   follow_up_months: 120
   full_name: Breast cancer
-  gender: female
+  sex: female
   scale: binary
 BD:
   follow_up_months: 120
   full_name: Bipolar disorder
-  gender: both
+  sex: both
   scale: binary
 BMI:
   follow_up_months: 120
   full_name: Body mass index
-  gender: both
+  sex: both
   scale: quantitative
+CAD:
+  follow_up_months: 120
+  full_name: Coronary artery disease
+  sex: both
+  scale: binary
 CAL:
   follow_up_months: 120
   full_name: Calcium
-  gender: both
+  sex: both
   scale: quantitative
 CD:
   follow_up_months: 120
   full_name: Crohn's disease
-  gender: both
+  sex: both
   scale: binary
 CED:
   follow_up_months: 120
   full_name: Coeliac disease
-  gender: both
+  sex: both
   scale: binary
 CRC:
   follow_up_months: 120
   full_name: Bowel cancer
-  gender: both
+  sex: both
   scale: binary
-CVD_UK:
+CVD:
   follow_up_months: 120
-  full_name: Cardiovascular disease UK
-  gender: both
+  full_name: Cardiovascular disease
+  sex: both
   scale: binary
 DOA:
   follow_up_months: 120
   full_name: Docosahexaenoic acid
-  gender: both
+  sex: both
   scale: quantitative
 EBMDT:
   follow_up_months: 120
   full_name: Estimated bone mineral density T-score
-  gender: both
+  sex: both
   scale: quantitative
 EGCR:
   follow_up_months: 120
   full_name: Estimated glomerular filtration rate (creatinine based)
-  gender: both
+  sex: both
   scale: quantitative
 EGCY:
   follow_up_months: 120
   full_name: Estimated glomerular filtration rate (cystatin based)
-  gender: both
+  sex: both
   scale: quantitative
 EOC:
   follow_up_months: 120
   full_name: Epithelial ovarian cancer
-  gender: female
+  sex: female
   scale: binary
 HBA1C_DF:
   follow_up_months: 120
   full_name: Glycated haemoglobin (diabetes free)
-  gender: both
+  sex: both
   scale: quantitative
 HDL:
   follow_up_months: 120
   full_name: HDL cholesterol
-  gender: both
+  sex: both
   scale: quantitative
 HEIGHT:
   follow_up_months: 120
   full_name: Height
-  gender: both
+  sex: both
   scale: quantitative
 HT:
   follow_up_months: 120
   full_name: Hypertension
-  gender: both
+  sex: both
   scale: binary
 IOP:
   follow_up_months: 120
   full_name: Intraocular pressure
-  gender: both
+  sex: both
   scale: quantitative
 ISS:
   follow_up_months: 120
   full_name: Ischaemic stroke
-  gender: both
+  sex: both
   scale: binary
 LDL_SF:
   follow_up_months: 120
   full_name: LDL cholesterol (statin free)
-  gender: both
+  sex: both
   scale: quantitative
 MEL:
   follow_up_months: 120
   full_name: Melanoma
-  gender: both
-  scale: binary
-MIE:
-  follow_up_months: 120
-  full_name: Myocardial infarction extended
-  gender: both
+  sex: both
   scale: binary
 MS:
   follow_up_months: 120
   full_name: Multiple sclerosis
-  gender: both
+  sex: both
   scale: binary
 OP:
   follow_up_months: 120
   full_name: Osteoporosis
-  gender: both
+  sex: both
   scale: binary
 OSFA:
   follow_up_months: 120
   full_name: Omega 6 fatty acids
-  gender: both
+  sex: both
   scale: quantitative
 OTFA:
   follow_up_months: 120
   full_name: Omega 3 fatty acids
-  gender: both
+  sex: both
   scale: quantitative
 PC:
   follow_up_months: 120
   full_name: Prostate cancer
-  gender: male
+  sex: male
   scale: binary
 PD:
   follow_up_months: 120
   full_name: Parkinson's disease
-  gender: both
+  sex: both
   scale: binary
 PDCL:
   follow_up_months: 120
   full_name: Phosphatidylcholines
-  gender: both
+  sex: both
   scale: quantitative
 PFA:
   follow_up_months: 120
   full_name: Polyunsaturated fatty acids
-  gender: both
+  sex: both
   scale: quantitative
 PHG:
   follow_up_months: 120
   full_name: Phosphoglycerides
-  gender: both
+  sex: both
   scale: quantitative
 POAG:
   follow_up_months: 120
   full_name: Primary open angle glaucoma
-  gender: both
+  sex: both
   scale: binary
 PSO:
   follow_up_months: 120
   full_name: Psoriasis
-  gender: both
+  sex: both
   scale: binary
 RA:
   follow_up_months: 120
   full_name: Rheumatoid arthritis
-  gender: both
+  sex: both
   scale: binary
 RHR:
   follow_up_months: 120
   full_name: Resting heart rate
-  gender: both
+  sex: both
   scale: quantitative
 RMNC:
   follow_up_months: 120
   full_name: Remnant cholesterol
-  gender: both
+  sex: both
   scale: quantitative
 SCZ:
   follow_up_months: 120
   full_name: Schizophrenia
-  gender: both
+  sex: both
   scale: binary
 SGM:
   follow_up_months: 120
   full_name: Sphingomyelins
-  gender: both
+  sex: both
   scale: quantitative
 SLE:
   follow_up_months: 120
   full_name: Systemic lupus erythematosus
-  gender: both
+  sex: both
   scale: binary
 T1D:
   follow_up_months: 120
   full_name: Type 1 diabetes
-  gender: both
+  sex: both
   scale: binary
 T2D:
   follow_up_months: 120
   full_name: Type 2 diabetes
-  gender: both
+  sex: both
   scale: binary
 TCH:
   follow_up_months: 120
   full_name: Total cholesterol
-  gender: both
+  sex: both
   scale: quantitative
 TFA:
   follow_up_months: 120
   full_name: Total fatty acids
-  gender: both
+  sex: both
   scale: quantitative
 TTG:
   follow_up_months: 120
   full_name: Total triglycerides
-  gender: both
+  sex: both
   scale: quantitative
 UC:
   follow_up_months: 120
   full_name: Ulcerative colitis
-  gender: both
+  sex: both
   scale: binary
 VTE:
   follow_up_months: 120
   full_name: Venous thromboembolic disease
-  gender: both
+  sex: both
   scale: binary
