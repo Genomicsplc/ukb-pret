@@ -6,21 +6,9 @@ This document contains notes regarding the UK Biobank PRS Release data
 
 - All PRS in the release are meant to be centered. We note however that the prostate cancer PRS (Standard version) has suboptimal centering properties. This issue will be fixed in the next release.
 - Both Crohn's disease and ulcerative colitis are primarily based on a relatively sparse ImmunoChip array. This sparsity complicated the meta-analysis process, leading to less effective Enhanced PRS. For this reason, the Enhanced version of the PRS is not provided for either of these two diseases. Please use the Standard versions in lieu of the Enhanced versions.
-- Motivated by the evaluation of the enhanced PRS set, which uses the
-  White British Unrelated group as training, we defined our testing
-  set to exclude individuals related to the White British Unrelated
-  group. This process resulted in an evaluation set of 104,621
-  individuals. However, we noted that this process was not perfectly
-  applied and out of the 104,621 individuals in testing, 9K show a
-  relatedness level above 0.2 (and 28K with greater than third degree
-  relatedness). We compared PRS performance in individuals with and
-  without relatedness to training and this did not measurably impact
-  the evaluation (see
-  ![](img/excluded_vs_only_related_28k_binary.png?raw=true)). 
-  This will be fixed in the next release. Meanwhile, users keen to
-  investigate further can identify individuals related to
-  the WBU set (using the relatedness file described in https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=531)
 
+- Motivated by the evaluation requirements for the Enhanced PRS set, which uses the White British Unrelated (WBU) group for training, we defined our Testing group to exclude individuals related to the WBU group. This process resulted in a Testing group of 104,621 individuals. However, we noted that this process was not perfectly applied. Out of the 104,621 individuals in Testing, 28,177 are related above 3rd degree level (kinship > 2^-4.5) and 12,229 are related above 2nd degree level (kinship > 2^-3.5) to individuals in WBU. We compared PRS performance in EUR Testing individuals with and without relatedness to WBU and this did not measurably impact the evaluation (see figure below). This issue will be fixed in the next release. Meanwhile, users keen to investigate further can identify individuals related to the WBU group using the relatedness file described in https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=531.
+![](img/excluded_vs_only_related_28k_binary.png?raw=true))
 
 ## Original Release Notes
 
