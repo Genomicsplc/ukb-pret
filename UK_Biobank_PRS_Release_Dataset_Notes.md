@@ -9,7 +9,8 @@ This document contains notes regarding the UK Biobank PRS Release data
 
 - Motivated by the evaluation requirements for the Enhanced PRS set, which uses the White British Unrelated (WBU) group for training, we defined our Testing group to exclude individuals related to the WBU group. This process resulted in a Testing group of 104,621 individuals. However, we noted that this process was not perfectly applied. Out of the 104,621 individuals in Testing, 28,177 are related above 3rd degree level (kinship > 2^-4.5) and 12,229 are related above 2nd degree level (kinship > 2^-3.5) to individuals in WBU. We compared PRS performance in EUR Testing individuals with and without relatedness to WBU and this did not measurably impact the evaluation (see figure below). This issue will be fixed in the next release. Meanwhile, users keen to investigate further can identify individuals related to the WBU group using the relatedness file described in https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=531.
 ![](img/excluded_vs_only_related_28k_binary.png?raw=true)
-![](img/excluded_vs_only_related_28k_quant.pdf?raw=true)
+
+![](img/excluded_vs_only_related_28k_quant.png?raw=true)
 
 ## Original Release Notes
 
