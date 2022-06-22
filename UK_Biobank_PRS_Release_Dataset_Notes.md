@@ -8,9 +8,9 @@ This document contains notes regarding the UK Biobank PRS Release data
 - Both Crohn's disease and ulcerative colitis are primarily based on a relatively sparse ImmunoChip array. This sparsity complicated the meta-analysis process, leading to less effective Enhanced PRS. For this reason, the Enhanced version of the PRS is not provided for either of these two diseases. Please use the Standard versions in lieu of the Enhanced versions.
 
 - Motivated by the evaluation requirements for the Enhanced PRS set, which uses the White British Unrelated (WBU) group for training, we defined our Testing group to exclude individuals related to the WBU group. This process resulted in a Testing group of 104,621 individuals. However, we noted that this process was not perfectly applied. Out of the 104,621 individuals in Testing, 28,177 are related above 3rd degree level (kinship > 2^-4.5) and 12,229 are related above 2nd degree level (kinship > 2^-3.5) to individuals in WBU. We compared PRS performance in EUR Testing individuals with and without relatedness to WBU and this did not measurably impact the evaluation (see figures below). This issue will be fixed in the next release. Meanwhile, users keen to investigate further can identify individuals related to the WBU group using the relatedness file described in https://biobank.ndph.ox.ac.uk/ukb/refer.cgi?id=531.
-![](img/excluded_vs_only_related_28k_binary.png?raw=true)
+![](img/excluding_28k_vs_28k_related_only_binary.png?raw=true)
 
-![](img/excluded_vs_only_related_28k_quant.png?raw=true)
+![](img/excluding_28k_vs_28k_related_only_quant.png?raw=true)
 
 ## Original Release Notes
 
@@ -95,7 +95,20 @@ Docosahexaenoic acid	DOA
 Estimated bone mineral density T-score	EBMDT  
 Estimated glomerular filtration rate (creatinine based)	EGCR  
 Estimated glomerular filtration rate (cystatin based)	EGCY  
-Glycated haemoglobin	HBA1C_DF  
+Glycated haemoglobin (excluding participants with diabetes)	HBA1C_DF  
 High density lipoprotein cholesterol	HDL  
 Height	HEIGHT  
 Intraocular pressure	IOP
+Low density lipoprotein cholesterol (statins-free individuals)	LDL_SF
+Omega-6 fatty acids	OSFA
+Omega-3 fatty acids	OTFA
+Phosphatidylcholines	PDCL
+Phosphoglycerides	PHG
+Polyunsaturated fatty acids	PFA
+Resting heart rate	RHR
+Remnant cholesterol (Non-HDL, Non-LDL cholesterol)	RMNC
+Sphingomyelins	SGM
+Total cholesterol	TCH
+Total fatty acids	TFA
+Total triglycerides	TTG
+
