@@ -1,5 +1,6 @@
 ## unreleased
 > - include __version__ attribute in package
+> - Update the `gender` keyword to `sex`
 
 # 0.1.0 - 17 Jun 2022
 - remove direct input of ancestry labels and infer from PC data at runtime
