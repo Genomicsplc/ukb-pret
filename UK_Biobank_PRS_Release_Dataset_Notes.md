@@ -98,17 +98,17 @@ Estimated glomerular filtration rate (cystatin based)	EGCY
 Glycated haemoglobin (excluding participants with diabetes)	HBA1C_DF  
 High density lipoprotein cholesterol	HDL  
 Height	HEIGHT  
-Intraocular pressure	IOP
-Low density lipoprotein cholesterol (statins-free individuals)	LDL_SF
-Omega-6 fatty acids	OSFA
-Omega-3 fatty acids	OTFA
-Phosphatidylcholines	PDCL
-Phosphoglycerides	PHG
-Polyunsaturated fatty acids	PFA
-Resting heart rate	RHR
-Remnant cholesterol (Non-HDL, Non-LDL cholesterol)	RMNC
-Sphingomyelins	SGM
-Total cholesterol	TCH
-Total fatty acids	TFA
-Total triglycerides	TTG
+Intraocular pressure	IOP  
+Low density lipoprotein cholesterol (statins-free individuals)	LDL_SF  
+Omega-6 fatty acids	OSFA  
+Omega-3 fatty acids	OTFA  
+Phosphatidylcholines	PDCL  
+Phosphoglycerides	PHG  
+Polyunsaturated fatty acids	PFA  
+Resting heart rate	RHR  
+Remnant cholesterol (Non-HDL, Non-LDL cholesterol)	RMNC  
+Sphingomyelins	SGM  
+Total cholesterol	TCH  
+Total fatty acids	TFA  
+Total triglycerides	TTG  
 
