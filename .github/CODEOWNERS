@@ -1,2 +1,8 @@
 /src/ @Genomicsplc/ph-sci-dev
 /test/ @Genomicsplc/ph-sci-dev
+/.github/ @Genomicsplc/ph-sci-dev
+poetry.lock @Genomicsplc/ph-sci-dev
+poetry.toml @Genomicsplc/ph-sci-dev
+pyproject.toml @Genomicsplc/ph-sci-dev
+CHANGELOG.md @Genomicsplc/ph-sci-dev
+LICENCE @Genomicsplc/ph-sci-dev
