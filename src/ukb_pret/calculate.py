@@ -253,11 +253,16 @@ def calculate_prs_sumstats(df: pandas.DataFrame, prs_column_name: str):
 def calculate_sample_information(df: pandas.DataFrame):
 
     num_samples = len(df)
-    if len(df[(df['prevalent'] == 1) & (df['incident'] == 1)]) > 0:
-        raise AssertionError(f"Cannot have samples that are both prevalent and incident - "
-                             f"{len(df[(df['prevalent'] == 1) & (df['incident'] == 1)])} samples found")
-    num_prevalent = len(df[df['prevalent'] == 1])
-    num_incident = len(df[df['incident'] == 1])
-    num_cases = num_prevalent + num_incident
+    if all(x in df.columns for x in ['prevalent', 'incident']):
+        if len(df[(df['prevalent'] == 1) & (df['incident'] == 1)]) > 0:
+            raise AssertionError(f"Cannot have samples that are both prevalent and incident - "
+                                 f"{len(df[(df['prevalent'] == 1) & (df['incident'] == 1)])} samples found")
+        num_prevalent = len(df[df['prevalent'] == 1])
+        num_incident = len(df[df['incident'] == 1])
+        num_cases = num_prevalent + num_incident
+        num_controls = num_samples - num_cases
+    else:
+        num_cases, num_prevalent, num_incident, num_controls = None, None, None, None
+
     return {'n_samples': num_samples, 'n_cases': num_cases, 'n_prevalent': num_prevalent,
-            'n_incident': num_incident, 'n_controls': num_samples - num_cases}
+            'n_incident': num_incident, 'n_controls': num_controls}

@@ -4,12 +4,14 @@ Command line interface for evaluating PRS
 
 import argparse
 import os
+import pandas
 import sys
 
-from ._io import resolve_column_header, write_metrics_csv, load_phenotype_dictionary
-from .constants import SUPPORTED_PHENOTYPE_HEADERS
-from .evaluate import evaluate_prs, read_and_prepare_data
-from .report import generate_report
+from ._io import resolve_column_header, resolve_rap_inputs, load_phenotype_dictionary, read_prs_file, read_pheno_file, \
+    read_principal_components_file
+
+from .constants import SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS, DF_COLUMN_HEADERS, UNSUPPORTED_DF_CHARS
+from .evaluate import compare_prs
 
 
 class ExitWithList(argparse.Action):
@@ -26,40 +28,30 @@ class ExitWithList(argparse.Action):
         sys.exit(0)
 
 
-class ListPhenotypes(ExitWithList):
-    """Lists the supported phenotype definitions provided by Genomics plc"""
-
-    def __init__(self, option_strings, dest, **kwargs):
-        super().__init__(option_strings, dest, **kwargs)
-        self.values = _parse_supported_phenotypes()
-
-
-# TODO: Provide interface with Gplc supported phenotype definitions
-def _parse_supported_phenotypes():
-    # "Config containing supported phenotypes has not yet been implemented")
-    return []
-
-
 def build_parser():
     """Defines the arguments taken by the command line parser."""
 
-    parser = argparse.ArgumentParser(description="A CLI tool for evaluating a set of PRS against a set of phenotypes.")
+    parser = argparse.ArgumentParser(description="A CLI tool for evaluating a set of PRS against a phenotype.")
 
     parser.add_argument('--prs-files',
-                        nargs='+',
+                        nargs=2,
                         required=True,
                         help='Paths to two files, each containing Polygenic Risk Score (PRS) and '
                              'participant eIDs in CSV format. Headers should be [eid,<data_tag>], '
-                             'where <data_tag> is the field used to identify the PRS in the output (REQUIRED)')
+                             'where <data_tag> is a field without spaces or special characters that is '
+                             'used to identify the PRS in the output (REQUIRED)')
     parser.add_argument('--pheno-file',
                         required=True,
                         help='Paths to a file containing phenotype data and participant '
                              'eIDs in CSV format. Headers should contain at least '
-                             '[eid,<trait_code>,sex,in_ukb_wbu_testing], '
-                             'where <trait_code> matches a Genomics plc phenotype definition '
-                             '(type "evaluate-prs --list-phenotypes" for supported '
-                             'phenotypes). Additionally, this file can include the following columns to enable '
-                             f'survival analysis in binary traits: {SUPPORTED_PHENOTYPE_HEADERS} (REQUIRED)')
+                             '[eid,<trait_code>], '
+                             'where <trait_code> is a field without spaces or special characters that '
+                             'can either correspond to an existing Gplc phenotype '
+                             'definition or be defined by the user. [sex] can also be '
+                             'included as a header for stratified analysis using coding {0: female, 1: male}. '
+                             'Additionally, this file can include the following columns to enable '
+                             f'survival analysis in binary traits: '
+                             f'{SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS} (REQUIRED)')
     parser.add_argument('--pcs-file', required=False, default=None,
                         help='Path to a file containing the first 4 genetically inferred principal components. '
                              'Headers should be [eid,pc1,pc2,pc3,pc4] (OPTIONAL) (when omitted, evaluation is '
@@ -67,77 +59,137 @@ def build_parser():
                              'quality control section)')
     parser.add_argument('--output-dir', required=False, default='.', help='Output directory for evaluation '
                                                                           'report and CSV containing metrics'
-                                                                          ' (OPTIONAL) (default is '
-                                                                          'current working directory)')
-    parser.add_argument('--list-phenotypes', action=ListPhenotypes, help='List supported Genomics plc '
-                                                                         'phenotype definitions')
+                                                                          ' (default is current working '
+                                                                          'directory) (OPTIONAL)')
     return parser
 
 
-def run_from_command_line(argv: list = None):
-    args_dict = preprocess_command_line_inputs(argv)
+def build_parser_rap():
 
-    if not os.path.exists(os.path.join(args_dict['output_dir'], 'plots')):
-        os.mkdir(os.path.join(args_dict['output_dir'], 'plots'))
+    parser = argparse.ArgumentParser(description="A CLI tool for evaluating a set of PRS against a phenotype on the "
+                                                 "Research Analysis Platform.")
 
-    trait_code = resolve_column_header(args_dict['pheno_file'])
-    phenotype_dictionary = load_phenotype_dictionary(trait_code)
-    eval_dict, cross_ancestry_eval_dict, meta_dict = dict(), dict(), dict()
-    if len(args_dict['prs_files']) != 2:
-        raise AssertionError('The UKB PRS Evaluation Tool only support side-by-side analysis of two input PRS.'
-                             ' Please only enter two filepaths to PRS files.')
-    prs_file1, prs_file2 = args_dict['prs_files']
-
-    df1, df2, meta_dict1, meta_dict2 = read_and_prepare_data(prs_file1, prs_file2, args_dict['pheno_file'], trait_code,
-                                                             phenotype_dictionary, args_dict['pcs_file'])
-
-    # Analyse prs_file1
-    data_tag = resolve_column_header(prs_file1)
-    eval_dict[data_tag], cross_ancestry_eval_dict[data_tag] = evaluate_prs(df1, trait_code, data_tag,
-                                                                           phenotype_dictionary,
-                                                                           args_dict['output_dir'])
-    meta_dict[data_tag] = meta_dict1
-
-    # Analyse prs_file2
-    data_tag = resolve_column_header(prs_file2)
-    eval_dict[data_tag], cross_ancestry_eval_dict[data_tag] = evaluate_prs(df2, trait_code, data_tag,
-                                                                           phenotype_dictionary,
-                                                                           args_dict['output_dir'])
-    meta_dict[data_tag] = meta_dict2
-
-    results = construct_results_dict(eval_dict, phenotype_dictionary, cross_ancestry_eval_dict, meta_dict, trait_code)
-    write_metrics_csv(results, os.path.join(args_dict['output_dir'], 'evaluation_metrics.csv'))
-    generate_report(results, os.path.join(args_dict['output_dir'], 'prs_evaluation_report.pdf'))
+    parser.add_argument('--ukb-release-prs-file',
+                        required=True,
+                        help='Path to a CSV file containing a Polygenic Risk Score (PRS), participant eIDs, sex and '
+                             'the first 4 genetically inferred principal components. '
+                             'Headers should be [eid,p<dataset_id>,sex,pc1,pc2,pc3,pc4], '
+                             'where <dataset_id> is the field used to identify the phenotype used to generate the PRS '
+                             '(REQUIRED)')
+    parser.add_argument('--user-prs-file', required=True, default=None,
+                        help='Path to a CSV file containing a Polygenic Risk Score (PRS) and participant eIDs '
+                             'provided by the user. Headers should be [eid,<data_tag>], where <data_tag> is a field '
+                             'without spaces or special characters that is '
+                             'used to identify the PRS in the output (REQUIRED)')
+    parser.add_argument('--pheno-file',
+                        required=True,
+                        help='Paths to a file containing phenotype data and participant '
+                             'eIDs in CSV format. Headers should contain at least '
+                             '[eid,<trait_code>], where <trait_code> is a field without spaces or special characters '
+                             'that can correspond to an existing Gplc phenotype '
+                             'definition or be defined by the user. Additionally, this file can include the following '
+                             f'columns to enable survival analysis in binary traits:'
+                             f' {SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS} (REQUIRED)')
+    parser.add_argument('--output-dir', required=False, default='.',
+                        help='Output directory for evaluation report and CSV containing metrics '
+                             '(default is current working directory) (OPTIONAL)')
+    return parser
 
 
-def construct_results_dict(eval_dict: dict, phenotype_dict: dict, cross_ancestry_eval_dict: dict, meta_dict: dict,
-                           trait_code: str):
+def validate_inputs(metadata: dict):
 
-    results = {'phenotype_code': trait_code,
-               'phenotype_description': phenotype_dict['full_name'],
-               'flavour': phenotype_dict['scale'],
-               'sex_major': phenotype_dict['sex'],
-               'evaluation': eval_dict,
-               'cross_ancestry_evaluation': cross_ancestry_eval_dict,
-               'metadata': meta_dict
-               }
-    return results
+    for k, v in metadata.items():
+        if k in DF_COLUMN_HEADERS and any(x in v for x in UNSUPPORTED_DF_CHARS):
+            print(f'The input {v} is invalid - please ensure it does not contain whitespace or invalid characters')
+            sys.exit(1)
+
+    if not os.path.exists(os.path.join(metadata['output_dir'], 'plots')):
+        os.makedirs(os.path.join(metadata['output_dir'], 'plots'))
 
 
-def main(argv: list = None) -> None:
-    """Entrypoint for ukb-pret command line usage
+def run_from_command_line(argv: list = None) -> None:
+    """
+    Entrypoint for ukb-pret command line usage
 
     Parameters
     ----------
     argv: list
-        list of options collected from command line"""
-    run_from_command_line(argv)
+        list of options collected from command line
+    """
+
+    args_dict = preprocess_command_line_inputs(build_parser(), argv)
+    trait_code = resolve_column_header(args_dict['pheno_file'])
+
+    phenotype_dictionary = load_phenotype_dictionary()
+    if trait_code in phenotype_dictionary.keys():
+        phenotype_dictionary = phenotype_dictionary[trait_code]
+    else:
+        print('ukb-pret does not support custom trait codes via the evaluate-prs entrypoint\n'
+              'The input phenotype file must use a valid Gplc trait code to identify the phenotype data\n'
+              f'Found {trait_code} in {args_dict["pheno_file"]} instead.')
+        sys.exit(1)
+
+    prs1_filepath, prs2_filepath = args_dict['prs_files']
+
+    prs1_label = resolve_column_header(prs1_filepath)
+    prs1_df = read_prs_file(prs1_filepath, prs1_label)
+    prs2_label = resolve_column_header(prs2_filepath)
+    prs2_df = read_prs_file(prs2_filepath, prs2_label)
+    pheno_df = read_pheno_file(args_dict['pheno_file'], trait_code, phenotype_dictionary)
+    pcs_df = read_principal_components_file(args_dict['pcs_file']).dropna()
+
+    ukb_pret(trait_code, prs1_label, prs2_label, args_dict['output_dir'], phenotype_dictionary,
+             prs1_df, prs2_df, pheno_df, pcs_df)
 
 
-def preprocess_command_line_inputs(argv: list = None):
+def run_from_command_line_rap(argv: list = None) -> None:
+    """Entrypoint for ukb-pret for use with the DNANexus Research Analysis Platform (RAP)
+
+    Parameters
+    ----------
+    argv: list
+        list of options collected from command line
+    """
+
+    args_dict = preprocess_command_line_inputs(build_parser_rap(), argv)
+    prs1_label = resolve_column_header(args_dict['user_prs_file'])
+    prs1_df = read_prs_file(args_dict['user_prs_file'], prs1_label)
+    prs2_df, pcs_df, sex_df, prs2_label, gplc_trait_code = resolve_rap_inputs(args_dict['ukb_release_prs_file'])
+    trait_code = resolve_column_header(args_dict['pheno_file'])
+    phenotype_dictionary = load_phenotype_dictionary()
+    if trait_code in phenotype_dictionary.keys():
+        phenotype_dictionary = phenotype_dictionary[trait_code]
+    else:
+        # For a user-defined trait code that doesn't directly correspond to a Gplc definition,
+        # inherit metadata from the Gplc phenotype definition
+        phenotype_dictionary = phenotype_dictionary[gplc_trait_code]
+        phenotype_dictionary['full_name'] = 'User-defined phenotype'
+
+    pheno_df = read_pheno_file(args_dict['pheno_file'], trait_code, phenotype_dictionary)
+    if 'sex' in pheno_df.columns:
+        print('WARNING: sex data are provided via the UKB PRS Release and the phenotype file.\n'
+              'Using phenotype sex data...')
+    else:
+        pheno_df = pheno_df.join(sex_df)
+
+    ukb_pret(trait_code, prs1_label, prs2_label, args_dict['output_dir'], phenotype_dictionary,
+             prs1_df, prs2_df, pheno_df, pcs_df)
+
+
+def ukb_pret(trait_code: str, prs1_label: str, prs2_label: str, output_dir: str, phenotype_dictionary: dict,
+             prs1_data: pandas.DataFrame, prs2_data: pandas.DataFrame, pheno_data: pandas.DataFrame,
+             pc_data: pandas.DataFrame):
+    metadata = {'prs1_label': prs1_label,
+                'prs2_label': prs2_label,
+                'trait_code': trait_code,
+                'output_dir': output_dir,
+                'phenotype_dictionary': phenotype_dictionary}
+    validate_inputs(metadata)
+    compare_prs(prs1_data, prs2_data, pheno_data, metadata, pc_data)
+
+
+def preprocess_command_line_inputs(parser, argv: list = None):
     if argv is None:
         argv = sys.argv[1:]
-
-    parser = build_parser()
     args_dict = vars(parser.parse_args(argv))
     return args_dict
