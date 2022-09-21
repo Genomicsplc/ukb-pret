@@ -7,10 +7,10 @@ import pycodestyle
 class TestPep8(unittest.TestCase):
     """Run PEP8 on all files in this directory and subdirectories."""
 
-    _exclude_dirs = ['subrepos', 'utility_scripts', '.venv']
+    _exclude_dirs = ['subrepos', 'utility_scripts', '.venv', '.pytest_cache', 'pheconstructors']
 
     def setUp(self):
-        self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.exclude_dirs = [os.path.join(self.base_dir, d) for d in self._exclude_dirs]
 
     def test_pep8(self):
@@ -18,7 +18,6 @@ class TestPep8(unittest.TestCase):
         print("Checking for PEP8 errors")
         style = pycodestyle.StyleGuide(max_line_length=120)
         errors = 0
-
         for root, directory, files in os.walk(self.base_dir):
             directory[:] = [d for d in directory if os.path.join(root, d) not in self.exclude_dirs]
             python_files = [f for f in files if f.endswith('.py')]

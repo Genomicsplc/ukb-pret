@@ -44,8 +44,7 @@ def generate_population_clusters():
 
 def generate_sex_and_ukb_testing_data():
     pc_dict = {'eid': ['FK1', 'FK2', 'FK3'],
-               'sex': [0, 0, 1],
-               'in_ukb_wbu_testing': [0, 1, 1]
+               'sex': [0, 0, 1]
                }
     return pandas.DataFrame.from_dict(pc_dict).set_index('eid')
 
@@ -102,7 +101,7 @@ class TestEvaluate(unittest.TestCase):
         larger_df = pandas.concat([new_df]*40, ignore_index=True)
         larger_df['ancestry'] = ['AFR', 'EAS', 'EUR', 'SAS'] * 30
         larger_df.index = larger_df.index.astype(str)
-        traits_yaml = load_phenotype_dictionary('LDL_SF')
+        traits_yaml = load_phenotype_dictionary()['LDL_SF']
         tmp_dir = TemporaryDirectory()
         os.mkdir(os.path.join(tmp_dir.name, 'plots'))
         eval_dict, cross_ancestry_eval_dict = evaluate_prs(larger_df, 'LDL_SF', 'prs_data', traits_yaml, tmp_dir.name)
@@ -111,7 +110,30 @@ class TestEvaluate(unittest.TestCase):
         self.assertTrue(os.path.isdir(os.path.join(tmp_dir.name, 'plots', 'prs_data_cross_ancestry')))
         expected_files = ['prs_data_prs_hist.png', 'prs_data_prs_box_plot.png'] + \
                          [f'prs_data_pc{i}_by_ancestry.png' for i in range(1, 5)]
-        self.assertTrue(all(x in expected_files for x in os.listdir(os.path.join(tmp_dir.name, 'plots',
-                                                                                 'prs_data_cross_ancestry'))))
+        self.assertTrue(all(x in os.listdir(os.path.join(tmp_dir.name, 'plots', 'prs_data_cross_ancestry'))
+                            for x in expected_files))
+        self.assertIsNotNone(eval_dict)
+        self.assertIsNotNone(cross_ancestry_eval_dict)
+
+    def test_evaluate_binary_prs_no_survival_data(self):
+        df = generate_custom_df(generate_prs_data, generate_binary_pheno_data, generate_pc_data,
+                                generate_sex_and_ukb_testing_data)
+
+        pop_clusters = generate_population_clusters()
+        new_df = _infer_ancestry_from_pcs(df, pop_clusters)
+        larger_df = pandas.concat([new_df]*40, ignore_index=True)
+        larger_df['ancestry'] = ['AFR', 'EAS', 'EUR', 'SAS'] * 30
+        larger_df.index = larger_df.index.astype(str)
+        traits_yaml = load_phenotype_dictionary()['AST']
+        tmp_dir = TemporaryDirectory()
+        os.mkdir(os.path.join(tmp_dir.name, 'plots'))
+        eval_dict, cross_ancestry_eval_dict = evaluate_prs(larger_df, 'AST', 'prs_data', traits_yaml, tmp_dir.name)
+
+        self.assertTrue(os.path.isdir(os.path.join(tmp_dir.name, 'plots')))
+        self.assertTrue(os.path.isdir(os.path.join(tmp_dir.name, 'plots', 'prs_data_cross_ancestry')))
+        expected_files = ['prs_data_prs_hist.png', 'prs_data_prs_box_plot.png'] + \
+                         [f'prs_data_pc{i}_by_ancestry.png' for i in range(1, 5)]
+        self.assertTrue(all(x in os.listdir(os.path.join(tmp_dir.name, 'plots', 'prs_data_cross_ancestry'))
+                            for x in expected_files))
         self.assertIsNotNone(eval_dict)
         self.assertIsNotNone(cross_ancestry_eval_dict)
