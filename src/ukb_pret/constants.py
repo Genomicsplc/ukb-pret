@@ -14,6 +14,9 @@ def _add_metric_names(metric_names: list, generic_metrics: list):
 PLOT_COLOURS = ['#E53935', '#9C27B0', '#3F51B5', '#2196F3', '#00BCD4', '#009688', '#43A047', '#FFC107', '#FF7043']
 MIN_EVALUATION_SAMPLES_PER_GROUP = 100
 
+DF_COLUMN_HEADERS = ['prs1_label', 'prs2_label', 'trait_code']
+UNSUPPORTED_DF_CHARS = list(' !@£$%^&*():€#+={}[]\"\\|?~`±§;')
+
 ####################################
 # FILE PATHS
 ####################################
@@ -21,6 +24,8 @@ MIN_EVALUATION_SAMPLES_PER_GROUP = 100
 _data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 PHENOTYPE_TRAIT_DEFS_PATH = os.path.join(_data_dir, 'traits.yaml')
 POPULATION_CLUSTER_CENTRES_PATH = os.path.join(_data_dir, 'pop_cluster_centres.tsv')
+UKB_ENHANCED_PRS_CODES_PATH = os.path.join(_data_dir, 'ukb_enhanced_prs_codes.tsv')
+FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'font')
 
 ####################################
 # ANCESTRY INFERENCE PARAMETERS
@@ -32,10 +37,13 @@ SOFTMAX_BETA = 3
 # DATA FILE HEADERS
 ####################################
 
-SUPPORTED_PHENOTYPE_HEADERS = ['age_at_first_assessment', 'date_of_diagnosis', 'date_of_first_assessment',
-                               'date_of_death', 'incident', 'sex', 'in_ukb_wbu_testing']
+SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS = ['age_at_first_assessment', 'date_of_diagnosis',
+                                                 'date_of_first_assessment', 'date_of_death', 'incident']
+SUPPORTED_PHENOTYPE_HEADERS = SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS + ['sex']
+
 SUPPORTED_PC_HEADERS = [f'pc{i}' for i in range(1, 5)]
 SURVIVAL_DATA_HEADERS = SUPPORTED_PHENOTYPE_HEADERS + ['age_at_diagnosis', 'age_at_censoring', 'age_event', 'prevalent']
+UKB_RELEASE_PRS_FILE_HEADERS = SUPPORTED_PC_HEADERS + ['sex']
 
 ####################################
 # METRIC CONSTANTS
@@ -44,8 +52,11 @@ SURVIVAL_DATA_HEADERS = SUPPORTED_PHENOTYPE_HEADERS + ['age_at_diagnosis', 'age_
 ODDS_RATIO_THRESHOLD_LIST = [3, 5, 10]
 ODDS_RATIO_TITLE = 'odds_ratio_INtop{}'
 GENERIC_METRIC_FIELDS = ['data_source', 'ancestry', 'sex', 'n_samples']
-BINARY_METRIC_KEYS = ['auc', 'odds_ratio_1sd', 'hazard_ratio_1sd', 'cond_odds_ratio_1sd', 'cond_hazard_ratio_1sd'] + \
-                     [ODDS_RATIO_TITLE.format(t) for t in ODDS_RATIO_THRESHOLD_LIST]
+BINARY_METRIC_KEYS_NO_SURVIVAL = ['auc', 'odds_ratio_1sd'] + [ODDS_RATIO_TITLE.format(t)
+                                                              for t in ODDS_RATIO_THRESHOLD_LIST]
+BINARY_METRIC_KEYS = BINARY_METRIC_KEYS_NO_SURVIVAL + ['hazard_ratio_1sd', 'cond_odds_ratio_1sd',
+                                                       'cond_hazard_ratio_1sd']
+BINARY_METRIC_NO_SURVIVAL_FIELDS = _add_metric_names(BINARY_METRIC_KEYS_NO_SURVIVAL, GENERIC_METRIC_FIELDS)
 BINARY_METRIC_FIELDS = _add_metric_names(BINARY_METRIC_KEYS,
                                          GENERIC_METRIC_FIELDS + ['n_cases', 'n_controls'])
 QUANTITATIVE_METRIC_KEYS = ['rsq', 'beta_1sd']
@@ -66,7 +77,7 @@ SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_BINARY = {'Number of Samples': 'n_samples
                                                  'Number of Controls': 'n_controls',
                                                  'Number of Incident Cases': 'n_incident',
                                                  'Number of Prevalent Cases': 'n_prevalent'}
-SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_QUANTITATIVE = {'Number of Samples': 'n_samples'}
+SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_SAMPLES_ONLY = {'Number of Samples': 'n_samples'}
 for t in ODDS_RATIO_THRESHOLD_LIST:
     REPORT_METRIC_MAPPINGS[ODDS_RATIO_TITLE.format(t)] = 'OR per std in top {} %'.format(t)
 
@@ -75,6 +86,6 @@ for t in ODDS_RATIO_THRESHOLD_LIST:
 ####################################
 
 REPORT_ANCESTRY_ORDER = ['EUR', 'EAS', 'SAS', 'AFR', 'All']
-REPORT_SEX_ORDER = ['both', 'female', 'male']
+REPORT_SEX_ORDER = ['unspecified', 'both', 'female', 'male']
 BINARY_METRICS_TO_INCLUDE_IN_REPORT = ['cond_odds_ratio_1sd', 'cond_hazard_ratio_1sd', 'auc']
 QUANTITATIVE_METRICS_TO_INCLUDE_IN_REPORT = ['rsq', 'beta_1sd']

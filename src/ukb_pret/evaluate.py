@@ -8,29 +8,28 @@ import os
 import pandas
 from scipy.special import softmax
 from sklearn.metrics.pairwise import cosine_similarity
-from typing import Tuple
+from typing import Tuple, List
 
-from ._io import read_prs_file, read_pheno_file, read_principal_components_file, \
-    resolve_column_header, read_pop_cluster_centers
+from ._io import read_pop_cluster_centers, write_metrics_csv
 from .calculate import calculate_binary_metrics, calculate_quantitative_metrics, calculate_prs_sumstats, \
     calculate_sample_information
 from .constants import SEX_MAPPING, SUPPORTED_PC_HEADERS, MIN_EVALUATION_SAMPLES_PER_GROUP,\
-    BINARY_METRIC_KEYS, QUANTITATIVE_METRIC_KEYS, POPULATION_CLUSTER_CENTRES_PATH, SOFTMAX_BETA
+    QUANTITATIVE_METRIC_KEYS, POPULATION_CLUSTER_CENTRES_PATH, SOFTMAX_BETA, \
+    SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS, BINARY_METRIC_KEYS_NO_SURVIVAL, SURVIVAL_DATA_HEADERS
+
 from .error import UkbPretImportError
 from .plot import generate_binary_plots, generate_quantitative_plots, generate_cross_ancestry_plots
+from .report import generate_report
 
 
-def read_and_prepare_data(prs_file_path1: str, prs_file_path2: str, pheno_file_path: str,
-                          trait_code: str, phenotype_dict: dict, pcs_file_path: str
-                          ) -> Tuple[pandas.DataFrame, pandas.DataFrame, dict, dict]:
+def prepare_data(prs1_df: pandas.DataFrame, prs2_df: pandas.DataFrame, pheno_df: pandas.DataFrame,
+                 pcs_df: pandas.DataFrame, trait_code: str) -> Tuple[pandas.DataFrame, pandas.DataFrame, dict, dict]:
     """Loads and prepares the input DataFrames from csv files. Returns the dataframes and dictionary of metadata"""
 
     pop_cluster_centers = read_pop_cluster_centers(POPULATION_CLUSTER_CENTRES_PATH)
 
-    df1, meta_dict1 = independent_sample_filtering(prs_file_path1, pheno_file_path, trait_code,
-                                                   phenotype_dict, pop_cluster_centers, pcs_file_path)
-    df2, meta_dict2 = independent_sample_filtering(prs_file_path2, pheno_file_path, trait_code,
-                                                   phenotype_dict, pop_cluster_centers, pcs_file_path)
+    df1, meta_dict1 = independent_sample_filtering(prs1_df, pheno_df, pcs_df, trait_code)
+    df2, meta_dict2 = independent_sample_filtering(prs2_df, pheno_df, pcs_df, trait_code)
 
     df1, df2, n_removed_from_sample_intersection1, n_removed_from_sample_intersection2 = \
         _filter_to_input_data_intersection(df1, df2)
@@ -52,15 +51,23 @@ def read_and_prepare_data(prs_file_path1: str, prs_file_path2: str, pheno_file_p
                                         'description': f'Total number of included samples: {len(df2)}'}
 
     meta_dict2 = _add_total_removed_from_prs(meta_dict2)
+
+    df1, df2 = infer_all_ancestries([df1, df2], pop_cluster_centers)
     return df1, df2, meta_dict1, meta_dict2
 
 
 def _add_total_removed_from_prs(meta_dict: dict) -> dict:
-    n_prs_missing_tot = meta_dict['n_removed_prs']['value'] + meta_dict['n_removed_from_ukb_wbu_filtering']['value'] \
-                     + meta_dict['n_removed_from_input_intersection']['value']
+    n_prs_missing_tot = meta_dict['n_removed_prs']['value'] + meta_dict['n_removed_from_input_intersection']['value']
     meta_dict['n_removed_prs_tot'] = {'value': n_prs_missing_tot,
                                       'description': f'Number of excluded PRS samples: {n_prs_missing_tot}'}
     return meta_dict
+
+
+def infer_all_ancestries(dfs: List[pandas.DataFrame], pop_cluster_centers: pandas.DataFrame):
+    out_dfs = []
+    for df in dfs:
+        out_dfs.append(_infer_ancestry_from_pcs(df, pop_cluster_centers))
+    return out_dfs
 
 
 def _infer_ancestry_from_pcs(df: pandas.DataFrame, pop_cluster_centres: pandas.DataFrame) -> pandas.DataFrame:
@@ -84,37 +91,53 @@ def _infer_ancestry_from_pcs(df: pandas.DataFrame, pop_cluster_centres: pandas.D
     return df_with_ancestry
 
 
-def independent_sample_filtering(prs_file: str, pheno_file_path: str, trait_code: str,
-                                 phenotype_dict: dict, pop_cluster_centers: pandas.DataFrame, pcs_file_path: str):
+def independent_sample_filtering(prs_df: pandas.DataFrame, pheno_df: pandas.DataFrame, pcs_df: pandas.DataFrame,
+                                 trait_code: str):
 
-    prs_column_name = resolve_column_header(prs_file)
-    prs_df = read_prs_file(prs_file, prs_column_name)
     n_input_samples = len(prs_df)
-    pheno_df = read_pheno_file(pheno_file_path, trait_code, phenotype_dict)
 
     prs_df, pheno_df = _get_overlapping_results(prs_df, pheno_df)
     prs_df, pheno_df, n_prs_missing, n_pheno_missing = _filter_null_values(prs_df, pheno_df, trait_code)
 
     df = prs_df.join(pheno_df, on=prs_df.index)
-    df = _prepare_pcs_data(df, pcs_file_path)
-    df = _infer_ancestry_from_pcs(df, pop_cluster_centers)
+    if pcs_df is None:
+        logging.warn('No Principal Component (PC) file provided - analysis will be carried out across all individuals '
+                     'and there will be no quality control section.')
+    else:
+        df = df.join(pcs_df)
 
-    df, n_removed_from_ukb_wbu_filtering = _filter_to_ukb_wbu_testing(df)
     meta_dict = {'n_removed_prs': {'value': n_prs_missing,
                                    'description': f'Number of excluded PRS samples from overlap with :'
                                                   f' {n_prs_missing}'},
                  'n_removed_pheno': {'value': n_pheno_missing,
                                      'description': f'Number of excluded phenotype samples: {n_pheno_missing}'},
                  'n_input_samples': {'value': n_input_samples,
-                                     'description': f'Total number of input PRS samples: {n_input_samples}'},
-                 'n_removed_from_ukb_wbu_filtering': {'value': n_removed_from_ukb_wbu_filtering,
-                                                      'description': 'Number removed after filtering to the '
-                                                                     'UKB PRS Release testing set: '
-                                                                     f'{n_removed_from_ukb_wbu_filtering}'},
-
+                                     'description': f'Total number of input PRS samples: {n_input_samples}'}
                  }
 
     return df, meta_dict
+
+
+def compare_prs(prs1_df: pandas.DataFrame, prs2_df: pandas.DataFrame, pheno_df: pandas.DataFrame, metadata: dict,
+                pcs_df=None):
+
+    eval_dict, cross_ancestry_eval_dict = dict(), dict()
+    prs1_df, prs2_df, meta_dict1, meta_dict2 = prepare_data(prs1_df, prs2_df, pheno_df, pcs_df, metadata['trait_code'])
+    meta_dict = {metadata['prs1_label']: meta_dict1, metadata['prs2_label']: meta_dict2}
+
+    eval_dict[metadata['prs1_label']], cross_ancestry_eval_dict[metadata['prs1_label']] = \
+        evaluate_prs(prs1_df, metadata['trait_code'], metadata['prs1_label'],
+                     metadata['phenotype_dictionary'], metadata['output_dir'])
+
+    eval_dict[metadata['prs2_label']], cross_ancestry_eval_dict[metadata['prs2_label']] = \
+        evaluate_prs(prs2_df, metadata['trait_code'], metadata['prs2_label'],
+                     metadata['phenotype_dictionary'], metadata['output_dir'])
+
+    results = construct_results_dict(eval_dict, metadata['phenotype_dictionary'], cross_ancestry_eval_dict, meta_dict,
+                                     metadata['trait_code'])
+    results['survival_data'] = all(x in pheno_df.columns for x in SUPPORTED_PHENOTYPE_HEADERS_SURVIVAL_ANALYSIS)
+    write_metrics_csv(results, os.path.join(metadata['output_dir'], 'evaluation_metrics.csv'))
+    generate_report(results, os.path.join(metadata['output_dir'], 'prs_evaluation_report.pdf'))
 
 
 def evaluate_prs(df: pandas.DataFrame, trait_code: str, prs_column_name: str, phenotype_dict: dict, output_dir: str):
@@ -123,11 +146,17 @@ def evaluate_prs(df: pandas.DataFrame, trait_code: str, prs_column_name: str, ph
     eval_func = _determine_evaluation_method(phenotype_dict['scale'])
 
     eval_dict, cross_ancestry_eval_dict = dict(), dict()
-    sexes_to_evaluate_in = ['both', 'female', 'male'] if phenotype_dict['sex'] == 'both' \
-        else [phenotype_dict['sex']]
+
+    if 'sex' not in df.columns:
+        df['sex'] = 'unspecified'
+        sexes_to_evaluate_in = ['unspecified']
+    else:
+        sexes_to_evaluate_in = ['both', 'female', 'male'] if phenotype_dict['sex'] == 'both' \
+            else [phenotype_dict['sex']]
+
     for sex in sexes_to_evaluate_in:
         eval_dict[sex] = {}
-        if sex == 'both':
+        if sex in ['both', 'unspecified']:
             input_df = df
         else:
             input_df = df[df['sex'] == SEX_MAPPING[sex]].copy()
@@ -142,12 +171,6 @@ def evaluate_prs(df: pandas.DataFrame, trait_code: str, prs_column_name: str, ph
                                                                       phenotype_dict, output_dir)
 
     return eval_dict, cross_ancestry_eval_dict
-
-
-def _filter_to_ukb_wbu_testing(df: pandas.DataFrame):
-    n_before = len(df)
-    df = df[df['in_ukb_wbu_testing'] == 1]
-    return df, n_before - len(df)
 
 
 def _filter_to_input_data_intersection(df1: pandas.DataFrame, df2: pandas.DataFrame):
@@ -202,24 +225,41 @@ def quantitative_evaluation(df: pandas.DataFrame, eval_dict: dict,
     return eval_dict
 
 
-def _prepare_pcs_data(df: pandas.DataFrame, pcs_file_path: str):
-    if pcs_file_path is None:
-        logging.warn('No Principal Component (PC) file provided - analysis will be carried out across all individuals '
-                     'and there will be no quality control section.')
-        return df
+def _are_sufficient_samples(sample_data: dict) -> bool:
+    sufficient_samples = False
+    if sample_data['n_cases'] is None and sample_data['n_controls'] is None:
+        if sample_data['n_samples'] > MIN_EVALUATION_SAMPLES_PER_GROUP:
+            sufficient_samples = True
     else:
-        # Prepare ancestry data
-        pcs_df = read_principal_components_file(pcs_file_path).dropna()
-        df = df.join(pcs_df)
-        return df
+        if sample_data['n_cases'] > MIN_EVALUATION_SAMPLES_PER_GROUP and \
+                sample_data['n_controls'] > MIN_EVALUATION_SAMPLES_PER_GROUP:
+            sufficient_samples = True
+    return sufficient_samples
+
+
+def resolve_binary_headers(df: pandas.DataFrame):
+    """
+    Resolve the headers expected in output metrics from input dataframe
+    """
+
+    metrics = BINARY_METRIC_KEYS_NO_SURVIVAL
+    if all(x in df.columns for x in ['age_at_first_assessment', 'sex']):
+        metrics.append('cond_odds_ratio_1sd')
+
+    if all(h in df.columns for h in SURVIVAL_DATA_HEADERS):
+        metrics.append('hazard_ratio_1sd')
+
+        if all(x in df.columns for x in ['age_at_first_assessment', 'sex']):
+            metrics.append('cond_hazard_ratio_1sd')
+
+    return metrics
 
 
 def generate_binary_results(df: pandas.DataFrame, prs_column_name: str, trait_code: str,
                             sex: str, ancestry: str, phenotype_dict: dict, output_dir: str):
     sample_data = calculate_sample_information(df)
     prs_sumstats_dict = calculate_prs_sumstats(df, prs_column_name)
-    if sample_data['n_cases'] > MIN_EVALUATION_SAMPLES_PER_GROUP and \
-            sample_data['n_controls'] > MIN_EVALUATION_SAMPLES_PER_GROUP:
+    if _are_sufficient_samples(sample_data):
         metrics_dict = calculate_binary_metrics(df, prs_column_name, trait_code)
         plots_dict = generate_binary_plots(
             df, trait_code, prs_column_name, sex,
@@ -227,7 +267,7 @@ def generate_binary_results(df: pandas.DataFrame, prs_column_name: str, trait_co
     else:
         logging.info(f'Cannot performing analysis in {ancestry} ancestry and {sex} sex - number of cases '
                      f'and/or controls is less than the minimum allowed value {MIN_EVALUATION_SAMPLES_PER_GROUP}')
-        metrics_dict, plots_dict = {k: {'value': '', 'lci': '', 'uci': ''} for k in BINARY_METRIC_KEYS}, dict()
+        metrics_dict, plots_dict = {k: {'value': '', 'lci': '', 'uci': ''} for k in resolve_binary_headers(df)}, dict()
     return {'metrics': metrics_dict, 'plots': plots_dict, 'prs_sumstats': prs_sumstats_dict, 'sample_data': sample_data}
 
 
@@ -251,7 +291,7 @@ def generate_quantitative_results(df: pandas.DataFrame, prs_column_name: str, tr
 
 def cross_ancestry_evaluation(df: pandas.DataFrame, prs_column_name: str, sex: str, phenotype_dict: dict,
                               output_dir: str):
-    if sex == phenotype_dict['sex']:
+    if sex == phenotype_dict['sex'] or sex == 'unspecified':
         plots_dict = generate_cross_ancestry_plots(df, prs_column_name,
                                                    os.path.join(output_dir,
                                                                 'plots', f'{prs_column_name}_cross_ancestry'),
@@ -288,3 +328,17 @@ def _filter_null_values(prs_df: pandas.DataFrame, pheno_df: pandas.DataFrame, tr
     out_prs_df, out_pheno_df = _get_overlapping_results(prs_df_clean, pheno_df_clean)
 
     return out_prs_df, out_pheno_df, removed_prs_entries, removed_pheno_entries
+
+
+def construct_results_dict(eval_dict: dict, phenotype_dict: dict, cross_ancestry_eval_dict: dict, meta_dict: dict,
+                           trait_code: str):
+
+    results = {'phenotype_code': trait_code,
+               'phenotype_description': phenotype_dict['full_name'],
+               'flavour': phenotype_dict['scale'],
+               'sex_major': phenotype_dict['sex'],
+               'evaluation': eval_dict,
+               'cross_ancestry_evaluation': cross_ancestry_eval_dict,
+               'metadata': meta_dict
+               }
+    return results

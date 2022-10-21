@@ -6,14 +6,13 @@ from fpdf import FPDF
 import os
 import pandas
 
-from .constants import REPORT_METRIC_MAPPINGS, \
-    SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_BINARY, SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_QUANTITATIVE, \
-    BINARY_METRICS_TO_INCLUDE_IN_REPORT, QUANTITATIVE_METRICS_TO_INCLUDE_IN_REPORT, REPORT_ANCESTRY_ORDER, \
-    SUPPORTED_PC_HEADERS, REPORT_SEX_ORDER
+from .constants import REPORT_METRIC_MAPPINGS, SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_BINARY, \
+    SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_SAMPLES_ONLY, BINARY_METRICS_TO_INCLUDE_IN_REPORT, \
+    QUANTITATIVE_METRICS_TO_INCLUDE_IN_REPORT, REPORT_ANCESTRY_ORDER, \
+    SUPPORTED_PC_HEADERS, REPORT_SEX_ORDER, FONT_DIR, MIN_EVALUATION_SAMPLES_PER_GROUP
 from .error import UkbPretReportError
 
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'img')
-FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'font')
 
 os.environ['FPDF_FONTPATH'] = FONT_DIR
 
@@ -107,9 +106,9 @@ class UkbPretReport(FPDF):
         super().__init__(font_cache_dir=FONT_DIR)
 
         self.results = results
-        self.sex_major = results['sex_major']
         self.data_sources = list(self.results['evaluation'].keys())
         self.all_sexes = list(set([sex for source in self.data_sources for sex in self.results['evaluation'][source]]))
+        self.sex_major = 'unspecified' if self.all_sexes == ['unspecified'] else results['sex_major']
         ordered_sexes = list()
         for sex in REPORT_SEX_ORDER:
             if sex in self.all_sexes:
@@ -348,18 +347,22 @@ class UkbPretReport(FPDF):
 
     def n_samples_table(self):
         self.ukb_pret_title('Sample Summary table', size='title2', spacing_size='r')
-        if self.results['flavour'] == 'binary':
+        if self.results['flavour'] == 'binary' and self.results['survival_data']:
             table_dict = self._format_table_dict(SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_BINARY,
                                                  'sample_data', None)
-            self.ukb_pret_title("The number of samples, cases and controls split by PRS, sex and ancestry", 'title3')
-            self.table(pandas.DataFrame.from_dict(table_dict),
-                       f'')
+            self.ukb_pret_title("The number of samples, cases and controls split by PRS, sex and ancestry",
+                                'title3')
+            self.set_font('poppins', size=self.text_size['r'])
+            self._simple_text(f'Please note that strata where the number of cases/controls < '
+                              f'{MIN_EVALUATION_SAMPLES_PER_GROUP} will not be evaluated')
         else:
-            table_dict = self._format_table_dict(SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_QUANTITATIVE,
+            table_dict = self._format_table_dict(SAMPLE_NUMBER_TABLE_TO_RESULTS_MAPPING_SAMPLES_ONLY,
                                                  'sample_data', None)
             self.ukb_pret_title("Number of samples split by PRS, sex and ancestry", 'title3')
-            self.table(pandas.DataFrame.from_dict(table_dict),
-                       f'')
+            self.set_font('poppins', size=self.text_size['r'])
+            self._simple_text(f'Please note that strata where the number of samples < '
+                              f'{MIN_EVALUATION_SAMPLES_PER_GROUP} will not be evaluated')
+        self.table(pandas.DataFrame.from_dict(table_dict), f'')
 
     def _format_table_dict(self, schema: dict, metric: str, precision: int = None):
         table_dict = {'Ancestry': list(), 'Sex': list()}

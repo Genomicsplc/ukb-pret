@@ -1,4 +1,8 @@
 ## unreleased
+> - New CLI entrypoint added for use with the DNANexus platform
+> - Addition of the `ukb-pret` applet source code
+> - Addition of example phenotype constructors for Hypertension and HDL
+> - Added `run_table_exporter.sh` script for use with DNANexus platform
 > - include __version__ attribute in package
 > - Update the `gender` keyword to `sex`
 

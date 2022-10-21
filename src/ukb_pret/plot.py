@@ -11,17 +11,23 @@ import pkg_resources
 import seaborn
 
 from lifelines import KaplanMeierFitter
+from matplotlib import font_manager
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, roc_curve
 from typing import Dict
 import yaml
 
-from .constants import CUM_INC_X_LABEL_MAPPINGS, SUPPORTED_PC_HEADERS, PLOT_COLOURS, SEX_MAPPING
+from .constants import CUM_INC_X_LABEL_MAPPINGS, SUPPORTED_PC_HEADERS, PLOT_COLOURS, SEX_MAPPING, FONT_DIR
 
 __all__ = ['theme_gplc', 'scale_colour_gplc', 'scale_fill_gplc']
 
 yaml_stream = pkg_resources.resource_stream(__name__, './img/palette.yaml')
 palette_gplc_hex = yaml.safe_load(yaml_stream)['light']
+
+# Load fonts for plotting
+font_files = font_manager.findSystemFonts(fontpaths=[FONT_DIR])
+for font_file in font_files:
+    font_manager.fontManager.addfont(font_file)
 
 
 def plot_roc_curve(df_dict: Dict[str, pandas.DataFrame], output_path: str, phenotype_column: str, prs_column: str,
@@ -154,12 +160,13 @@ def generate_binary_plots(df: pandas.DataFrame, trait_code: str, data_column_nam
         os.mkdir(output_dir)
 
     plots_dict = dict()
-    if sex == phenotype_dict['sex']:
+    if sex == phenotype_dict['sex'] or sex == 'unspecified':
         plots_dict['roc_curve'] = prepare_and_plot_roc(df, trait_code, data_column_name,
                                                        os.path.join(output_dir, 'roc_plot.png'), sex, ancestry)
-    plots_dict['cum_inc'] = prepare_and_plot_cumulative_incidence(df, trait_code, data_column_name,
-                                                                  os.path.join(output_dir, 'cum_inc_plot.png'), sex,
-                                                                  ancestry)
+    if 'age_event' in df.columns:
+        plots_dict['cum_inc'] = prepare_and_plot_cumulative_incidence(df, trait_code, data_column_name,
+                                                                      os.path.join(output_dir, 'cum_inc_plot.png'), sex,
+                                                                      ancestry)
 
     return plots_dict
 
@@ -179,7 +186,6 @@ def prepare_and_plot_cumulative_incidence(df: pandas.DataFrame, trait_code: str,
     evaluation packet"""
 
     df_surv = _prepare_risk_groups(df, data_column_name)
-
     temporal_column = 'age_event'
     kmfdf = _prepare_survival_model(df_surv, temporal_column, trait_code)
     _plot_cumulative_incidence(kmfdf, trait_code, output_path, CUM_INC_X_LABEL_MAPPINGS[temporal_column],
@@ -286,7 +292,7 @@ def _plot_box_plot_risk_groups(df: pandas.DataFrame, output_path: str, data_colu
     """
 
     prs_percentiles = list(df[data_column_name].quantile([0.03, 0.4, 0.6, 0.97]))
-    df.loc[(df[data_column_name] <= prs_percentiles[0]), 'risk_group'] = 'Top 3% Protected'
+    df.loc[(df[data_column_name] <= prs_percentiles[0]), 'risk_group'] = 'Bottom 3% PRS'
     df.loc[((df[data_column_name] > prs_percentiles[1]) & (df[data_column_name] <= prs_percentiles[2])),
            'risk_group'] = 'Median Distribution'
     df.loc[(df[data_column_name] > prs_percentiles[3]), 'risk_group'] = 'Top 3% PRS'
@@ -297,7 +303,7 @@ def _plot_box_plot_risk_groups(df: pandas.DataFrame, output_path: str, data_colu
     pyplot.rcParams["axes.labelsize"] = 17
 
     ctpyplot = seaborn.catplot(x="risk_group", y=trait_code, data=df, kind="box",
-                               order=['Top 3% Protected', 'Median Distribution', 'Top 3% PRS'],
+                               order=['Bottom 3% PRS', 'Median Distribution', 'Top 3% PRS'],
                                palette=seaborn.color_palette(['#53b24a', '#3a7bb8', '#e0001e']))
     ctpyplot.set_axis_labels("", trait_code + ' values')
     ctpyplot.set_titles(ancestry, size=18)
@@ -459,6 +465,7 @@ def _plot_prs_histogram_per_ancestry(df: pandas.DataFrame, prs_column_name: str,
     pyplot.title(prs_column_name, size=28)
     pyplot.savefig(output_path, bbox_inches='tight', dpi=300)
     pyplot.close()
+    pyplot.style.use('default')
 
 
 def _plot_prs_box_plot_per_ancestry(df: pandas.DataFrame, prs_column_name: str, output_path: str):
@@ -470,12 +477,11 @@ def _plot_prs_box_plot_per_ancestry(df: pandas.DataFrame, prs_column_name: str, 
     seaborn.set_style('ticks')
     ctplt = seaborn.catplot(x='ancestry', y=prs_column_name, data=df, kind='box',
                             palette={k: v for k, v in zip(ancestries, PLOT_COLOURS[0:len(ancestries)])})
-    # ctplt.set_axis_labels('Ancestry', 'PRS distribution')
-    pyplot.xticks(fontsize=18)
-    pyplot.yticks(fontsize=20)
-    pyplot.xlabel('Ancestry', size=24)
-    pyplot.ylabel('PRS distribution', size=24)
-    pyplot.title(prs_column_name, size=24)
-    pyplot.savefig(output_path, bbox_inches='tight', dpi=300)
+    ctplt.set_axis_labels('Ancestry', 'PRS distribution', size=24)
+    ax = ctplt.fig.gca()
+    ax.set_title(prs_column_name, size=24)
+    ax.tick_params(axis='x', labelsize=16)
+    ax.tick_params(axis='y', labelsize=16)
+    ctplt.savefig(output_path, bbox_inches='tight', dpi=300)
     pyplot.close()
     pyplot.style.use('default')

@@ -31,7 +31,8 @@ name = 'genomics'
 url = 'https://artifactory.genomicsplc.com/api/pypi/pypi-local/simple'
 
 [tool.poetry.scripts]
-evaluate-prs = 'ukb_pret.cli:main'
+evaluate-prs = 'ukb_pret.cli:run_from_command_line'
+evaluate-prs-rap = 'ukb_pret.cli:run_from_command_line_rap'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
