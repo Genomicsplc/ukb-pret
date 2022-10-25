@@ -1,7 +1,7 @@
 ## unreleased
 >
 
-# 0.2.0 - 21 Oct 2022
+# 0.2.0 - 25 Oct 2022
 - New CLI entrypoint added for use with the DNANexus platform
 - Addition of the `ukb-pret` applet source code
 - Addition of example phenotype constructors for Hypertension and HDL
