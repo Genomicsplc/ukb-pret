@@ -1,5 +1,5 @@
 ## unreleased
->
+- Replace example pheconstructors with generalised notebooks for simple phenotypes
 
 # 0.2.0 - 25 Oct 2022
 - New CLI entrypoint added for use with the DNANexus platform

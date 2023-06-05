@@ -128,7 +128,7 @@ Click the "Run" button to commence the analysis. Once the job is finished, you w
 input PRS. A CSV named `evaluation_metrics.csv` is also produced which can be used to create your own bespoke plots 
 and figures from the raw data.
 
-*Examples of the phenotypes used to generate the Enhanced PRS set can be found in the 
+*Notebooks for generating some of the Enhanced PRS phenotypes can be found in the 
 [pheconstructors directory](./pheconstructors) (see the [README](./pheconstructors/README.md) for instructions on how
 to run these in the RAP)
 
