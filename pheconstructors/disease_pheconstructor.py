@@ -5,40 +5,59 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
 
-# # Hypertension Pheconstructor
+# # Disease Pheconstructor
 #
-# This notebook contains code to reproduce the Hypertension phenotype used in the UK Biobank PRS release.
+# This notebook contains code to reproduce the phenotype for binary traits used in the UK Biobank PRS release.
 #
 # To reproduce the phenotype:
 #
 # 1. Convert this file to an Jupyter notebook using jupytext
-# 2. Upload the notebook to your DNANexus project with `dx upload HT_pheconstructor.ipynb`
-# 3. Start a JupyterLab instance from the DNANexus web interface, ensuring that it is running on a Spark cluster
-# 4. Open the pheconstructor notebook and replace the `<dataset_id>.dataset'` string in the second cell with the ID of your UKB dataset
-# 5. Run the notebook - this should output the phenotype data to a CSV file compatible with the UKB-PRET tool
+# 2. Upload the notebook to your DNANexus project with `dx upload disease_pheconstructor.ipynb`
+# 3. Upload the YAML of valid traits to your DNANexus project with `dx upload diseases.yaml`
+# 4. Start a JupyterLab instance from the DNANexus web interface, ensuring that it is running on a Spark cluster
+# 5. Open the pheconstructor notebook and replace the `TRAIT_CODE` variable in the first Python cell of this notebook with the trait of interest
+# 6. Replace the `'<dataset_id>.dataset'` string in the first Python cell with the ID of your UKB dataset
+# 7. Run the notebook - this should output the phenotype data to a CSV file named `<TRAIT_CODE>_phenotype.csv`, which is compatible with the UKB-PRET tool.
+# If the Spark queries in the notebook fail, try increasing the number of cores and/or processing power of your instance
+
+TRAIT_CODE = 'HT'
+DATASET_ID = '<dataset_id>.dataset'
+CONFIG_FILENAME = 'diseases.yaml'
 
 # +
 import pyspark
-import dxpy
 import dxdata
-from datetime import datetime
 
 from typing import List
 import pandas
 import numpy
+import yaml
 # -
 
 # Load the database into pyspark and dxdata
 sc = pyspark.SparkContext()
 spark = pyspark.sql.SparkSession(sc)
-dataset = dxdata.load_dataset('<dataset_id>.dataset')
+dataset = dxdata.load_dataset(DATASET_ID)
+
+# +
+# Load the phenotype configuration YAML
+
+try:
+    with open(f'/mnt/project/{CONFIG_FILENAME}', 'r') as f:
+        pheno_config = yaml.safe_load(f)
+except FileNotFoundError as e:
+    raise FileNotFoundError(f'File {CONFIG_FILENAME} was not found. '
+                            f'Please upload the file with: dx upload {CONFIG_FILENAME}')
+# -
+
+[pheno_config] = [conf for conf in pheno_config if conf['trait_code'] == TRAIT_CODE]
 
 
 # ### Loading the self-reported data
@@ -51,9 +70,11 @@ dataset = dxdata.load_dataset('<dataset_id>.dataset')
 #
 # Each 20008 instance consists of a number of arrays(a0, a1, ...), where each array element contains a single year for date of diagnosis
 
-def load_all_self_reported_data(disease_codes: List[int]):
-    self_reported_code_prefix = 'p20002'
-    self_reported_date_code_prefix = 'p20008'
+def load_all_self_reported_data(self_reported_config: dict):
+        
+    self_reported_code_prefix = f'p{self_reported_config["phenotype_datafield"]}'
+    self_reported_date_code_prefix = f'p{self_reported_config["date_datafield"]}'
+    disease_codes = self_reported_config['coding_values']
 
     [participant_data] = [e for e in dataset.entities if e.name == 'participant']
     sr_codes = [f.name for f in participant_data.fields if f.name.startswith(self_reported_code_prefix)]
@@ -101,7 +122,7 @@ def load_all_self_reported_data(disease_codes: List[int]):
     disease_df = exploded_df[exploded_df['disease_code'].isin(disease_codes)]
     # Remove instances with unknown date (-1) or preferred not to answer (-3)
     disease_df['date_of_diagnosis'] = disease_df['date_of_diagnosis'].replace(-1, numpy.NaN).replace(-3, numpy.NaN)
-    # Convert the date_of_diangosis to a date
+    # Convert the date_of_diagnosis to a date
     disease_df['date_of_diagnosis'] = pandas.to_datetime(disease_df['date_of_diagnosis'].astype(float), format='%Y')
     
     # For each case, choose the earliest date of diagnosis
@@ -117,8 +138,6 @@ def load_all_self_reported_data(disease_codes: List[int]):
 # The dates in `hesin` are named `epistart` (which corresponds to the episode start date), and `admidate` (the admission date to the hospital) 
 #
 # Where available, we choose to use epistart as the date_of_diagnosis, and fall back onto admidate
-
-# +
 
 def load_hesin_data(icd10_codes: List[str]):
 
@@ -156,16 +175,11 @@ def load_hesin_data(icd10_codes: List[str]):
     # Get the date of last encounter of each individual
     df['date_of_last_encounter'] = df.groupby(df.index)["date_of_diagnosis"].max()
 
-    # Filter to the ICD10 codes of interest (and choose earliest date)
-    ht_df = df[df['code'].isin(icd10_codes)]
-    ht_date_of_diag_series = ht_df.groupby(ht_df.index)["date_of_diagnosis"].min()
-    
-    ht_dates_df = ht_date_of_diag_series.to_frame()
-    
-    return ht_date_of_diag_series.to_frame()
+    df = df[df['code'].isin(icd10_codes)]
+    date_of_diag_series = df.groupby(df.index)["date_of_diagnosis"].min()
 
+    return date_of_diag_series.to_frame()
 
-# -
 
 # ### Loading patient data
 #
@@ -194,30 +208,34 @@ def load_binary_patient_data():
     return patient_df
 
 
-# # Generate Hypertension Phenotype
+# # Generate Disease Phenotype
 #
-# Now a generic hypertension phenotype is created by combining self-reported data with hospital inpatient data
+# Now a generic disease phenotype is created by combining self-reported data with hospital inpatient data
 
-hypertension_codes = [1065, 1072]
-self_reported_df = load_all_self_reported_data(hypertension_codes)
+[self_reported_config] = [d for d in pheno_config['data_fields'] if d['data_type'] == 'self-report']
+self_reported_df = load_all_self_reported_data(self_reported_config)
 
-hypertension_icd10_codes = ['I10', 'I15', 'I150', 'I151', 'I152', 'I158', 'I159']
-hesin_df = load_hesin_data(hypertension_icd10_codes)
+# +
+[icd10_config] = [d for d in pheno_config['data_fields'] if d['data_type'] == 'icd10']
+
+icd10_codes = icd10_config['coding_values']
+hesin_df = load_hesin_data(icd10_codes)
+# -
 
 # Load the generic patient data
 patient_df = load_binary_patient_data()
 
 # Rename columns
-self_reported_df = self_reported_df.rename(columns={'date_of_diagnosis':'date_of_diag_sr', 'disease_code':'hypertension_sr'})
+self_reported_df = self_reported_df.rename(columns={'date_of_diagnosis':'date_of_diag_sr', 'disease_code':f'{pheno_config["trait_code"]}_sr'})
 hesin_df = hesin_df.rename(columns={'date_of_diagnosis':'date_of_diag_icd10'})
 
 # +
 # Merging the patient data with hospital and self-reported data
 patient_df = patient_df.merge(self_reported_df, left_index=True, right_index=True, how="left")
-patient_df["hypertension_sr"] = (~patient_df["hypertension_sr"].isnull()).astype(int)
+patient_df[f"{pheno_config['trait_code']}_sr"] = (~patient_df[f"{pheno_config['trait_code']}_sr"].isnull()).astype(int)
 
 patient_df = patient_df.merge(hesin_df, left_index=True, right_index=True, how="left")
-patient_df["hypertension_main_icd10"] = (~patient_df["date_of_diag_icd10"].isnull()).astype(int)
+patient_df[f"{pheno_config['trait_code']}_main_icd10"] = (~patient_df["date_of_diag_icd10"].isnull()).astype(int)
 
 
 # +
@@ -236,8 +254,8 @@ def vec_or(*args):
 # -
 
 # Creating the overall hypertension and date_of_diagnosis columns
-# This is done with a logical OR on both HT columns, and choosing the mimimum date of diagnosis
-patient_df['HT'] = df_or(patient_df[['hypertension_sr', 'hypertension_main_icd10']])
+# This is done with a logical OR on both columns, and choosing the minimum date of diagnosis
+patient_df[pheno_config['trait_code']] = df_or(patient_df[[f'{pheno_config["trait_code"]}_sr', f'{pheno_config["trait_code"]}_main_icd10']])
 patient_df['date_of_diagnosis'] = patient_df[["date_of_diag_sr", "date_of_diag_icd10"]].min(axis=1)
 
 # Adding the incident column
@@ -263,10 +281,10 @@ def infer_age(birthdate, reference, newname="age_at_first_assessment"):
 
 patient_df['age_at_first_assessment'] = infer_age(patient_df['date_of_birth'], pandas.to_datetime(patient_df['date_of_first_assessment']))
 
-EXPECTED_BINARY_HEADERS = ['HT','incident','age_at_first_assessment','date_of_first_assessment','date_of_diagnosis','date_of_death']
+EXPECTED_BINARY_HEADERS = [pheno_config['trait_code'],'incident','age_at_first_assessment','date_of_first_assessment','date_of_diagnosis','date_of_death']
 patient_df = patient_df[EXPECTED_BINARY_HEADERS]
 
 # Output to file
-patient_df.to_csv('HT_phenotype.csv')
+patient_df.to_csv(f'{pheno_config["trait_code"]}_phenotype.csv')
 
 

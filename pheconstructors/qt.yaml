@@ -1,0 +1,80 @@
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 30630
+  sex: both
+  trait_code: APOEA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 30640
+  sex: both
+  trait_code: APOEB
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 30680
+  sex: both
+  trait_code: CAL
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23450
+  sex: both
+  trait_code: DOA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 30760
+  sex: both
+  trait_code: HDL
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23445
+  sex: both
+  trait_code: OSFA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23444
+  sex: both
+  trait_code: OTFA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23437
+  sex: both
+  trait_code: PDCL
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23446
+  sex: both
+  trait_code: PFA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23434
+  sex: both
+  trait_code: PHG
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 102
+  sex: both
+  trait_code: RHR
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23402
+  sex: both
+  trait_code: RMNC
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23438
+  sex: both
+  trait_code: SGM
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23400
+  sex: both
+  trait_code: TCH
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23442
+  sex: both
+  trait_code: TFA
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 23407
+  sex: both
+  trait_code: TTG
