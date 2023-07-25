@@ -22,7 +22,7 @@ quantitative trait phenotype (`qt_pheconstructor.py`)and convert this file to a 
 This can be done via the command line with the command 
 ```jupytext --to ipynb [disease|qt]_pheconstructor.py```
 2. Upload the notebook to your DNANexus project with `dx upload [disease|qt]_pheconstructor.ipynb`
-3. Upload the YAML of valid traits to your DNANexus project with `dx upload [disease|qt].yaml`
+3. Upload the YAML of valid traits to your DNANexus project with `dx upload [diseases|qt].yaml`
 4. Start a JupyterLab instance from the DNANexus web interface, ensuring that it is running on a Spark cluster
 5. Open the pheconstructor notebook and replace the `TRAIT_CODE` variable in the first Python cell of this notebook with the trait of interest
 6. Replace the `'<dataset_id>.dataset'` string in the first Python cell with the ID of your UKB dataset
