@@ -10,6 +10,11 @@
   trait_code: APOEB
 - data_fields:
   - data_type: quantitative
+    phenotype_datafield: 21001
+  sex: both
+  trait_code: BMI
+- data_fields:
+  - data_type: quantitative
     phenotype_datafield: 30680
   sex: both
   trait_code: CAL
@@ -23,6 +28,11 @@
     phenotype_datafield: 30760
   sex: both
   trait_code: HDL
+- data_fields:
+  - data_type: quantitative
+    phenotype_datafield: 50
+  sex: both
+  trait_code: HEIGHT
 - data_fields:
   - data_type: quantitative
     phenotype_datafield: 23445

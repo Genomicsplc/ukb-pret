@@ -588,6 +588,23 @@
   trait_code: SCZ
 - data_fields:
   - coding_values:
+    - 1381
+    data_type: self-report
+    date_datafield: 20008
+    phenotype_datafield: 20002
+  - coding_values:
+    - M32
+    - M321
+    - M328
+    - M329
+    - M3290
+    data_type: icd10
+    date_datafield: 41280
+    phenotype_datafield: 41270
+  sex: both
+  trait_code: SLE
+- data_fields:
+  - coding_values:
     - 1463
     data_type: self-report
     date_datafield: 20008
