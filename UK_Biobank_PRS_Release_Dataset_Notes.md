@@ -1,8 +1,29 @@
 # UK Biobank PRS Release
 
-This document contains notes regarding the UK Biobank PRS Release data
+This document contains notes regarding the UK Biobank PRS Release described under Category 300 in the 
+UK Biobank Data Showcase (https://biobank.ndph.ox.ac.uk/ukb/label.cgi?id=300).  
 
-## Dataset release notes, issues and clarifications
+Version 1 of the UK Biobank PRS Release was released in May 2022. 
+
+Version 2 of the UK Biobank PRS Release was released in May 2024, and incorporates feedback from users, and new data. 
+
+The polygenic risk scores (PRSs) are described in Thompson et al. 2022 (https://doi.org/10.1101/2022.06.16.22276246), 
+and the performance evaluation of the UK Biobank PRS Release v2 is described 
+in Thompson et al. 2024 (https://doi.org/10.1371/journal.pone.0307270).
+
+For any questions or comments regarding these files, please contact Genomics plc at `research@genomicsplc.com` .
+
+## v2 Dataset release notes, issues and clarifications
+
+- **Subgroup on whom Standard PRS scores are calculated**. Following new UKB withdrawals, the number of UKB individuals on whom Standard PRS scores are calculated has reduced by 46. N=486,176.
+- **Subgroup on whom Enhanced PRS scores are calculated**. Following feedback from users, the subgroup of UK Biobank for whom Enhanced PRS scores are calculated has been expanded to include all individuals in UK Biobank who are not members of White British Unrelated subgroup (the latter was used to generate GWAS training data for the Enhanced PRS set - see [Thompson et al. 2024]((https://doi.org/10.1371/journal.pone.0307270)). N=148,936.
+- **Testing subgroup for PRS performance evaluations**. The Testing Subgroup has been altered to satisfy the following criteria: (a) not part of the White British Unrelated subgroup; (b) not closely related to any individual in the White British Unrelated subgroup (no relatives of 2nd degree relatedness or above with the WBU sample were included, KING kinship coefficient threshold = 2-3.5 =  0.0884). N=119,879 (EUR=97,608, SAS=9,542, AFR=9,476, EAS=2,864, AMR=389). The v2 Testing Subgroup differs from the v1 Testing Subgroup, both by individuals added and by individuals taken away. Comparisons of performance metrics between the two Testing subgroups indicate similar values and no biases in reported metrics (see [“v1 Dataset release notes, issues and clarifications”](#v1-Dataset-release-notes-issues-and-clarifications) below). 
+- **Enhanced PRS for Crohn’s disease and ulcerative colitis**. For reasons explained in [Thompson et al 2022 (Supplementary Materials)](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0307270#sec010), the Enhanced PRS score in the Enhanced PRS subgroup for Crohn’s disease and ulcerative colitis has been set equal to the Standard PRS score for these two diseases.
+- **Updated Standard and Enhanced PRSs - new data**. Following the ingestion of new external summary statistic GWAS data, updated or new Standard and Enhanced PRS scores have now been created for the following quantitative traits: glycated haemoglobin, resting heart rate, low density lipoprotein cholesterol, high density lipoprotein cholesterol, total triglycerides, and total cholesterol. Of these, the Standard PRSs for resting heart rate, total triglycerides, and total cholesterol are new (Version 1 did not include Standard PRSs for these traits).
+- **Updated Standard and Enhanced PRSs - new centering**. The prostate cancer PRS (Standard version) had suboptimal centering properties in Version 1. This issue has been fixed in Version 2.
+
+
+## v1 Dataset release notes, issues and clarifications
 
 - All PRS in the release are meant to be centered. We note however that the prostate cancer PRS (Standard version) has suboptimal centering properties. This issue will be fixed in the next release.
 - Both Crohn's disease and ulcerative colitis are primarily based on a relatively sparse ImmunoChip array. This sparsity complicated the meta-analysis process, leading to less effective Enhanced PRS. For this reason, the Enhanced version of the PRS is not provided for either of these two diseases. Please use the Standard versions in lieu of the Enhanced versions.
@@ -12,7 +33,7 @@ This document contains notes regarding the UK Biobank PRS Release data
 
 ![](img/excluding_28k_vs_28k_related_only_quant.png?raw=true)
 
-## Original Release Notes
+## v1 Original Release Notes
 
 This Return-of-Results package relates to the following paper:
 Thompson et al. 2022. UK Biobank release and systematic evaluation of optimised polygenic risk scores for 53 diseases and
