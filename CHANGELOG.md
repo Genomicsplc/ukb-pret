@@ -1,5 +1,6 @@
 ## unreleased
 - Replace example pheconstructors with generalised notebooks for simple phenotypes
+- Updated [UK_Biobank_PRS_Release_Dataset_Notes.md](UK_Biobank_PRS_Release_Dataset_Notes.md) to include details about the v2 dataset
 
 # 0.2.0 - 25 Oct 2022
 - New CLI entrypoint added for use with the DNANexus platform
