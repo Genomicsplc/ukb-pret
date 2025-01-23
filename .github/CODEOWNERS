@@ -1,8 +1,8 @@
-/src/ @Genomicsplc/ph-sci-dev
-/test/ @Genomicsplc/ph-sci-dev
-/.github/ @Genomicsplc/ph-sci-dev
-poetry.lock @Genomicsplc/ph-sci-dev
-poetry.toml @Genomicsplc/ph-sci-dev
-pyproject.toml @Genomicsplc/ph-sci-dev
-CHANGELOG.md @Genomicsplc/ph-sci-dev
-LICENCE @Genomicsplc/ph-sci-dev
+/src/ @Genomicsplc/sci-dev
+/test/ @Genomicsplc/sci-dev
+/.github/ @Genomicsplc/sci-dev
+poetry.lock @Genomicsplc/sci-dev
+poetry.toml @Genomicsplc/sci-dev
+pyproject.toml @Genomicsplc/sci-dev
+CHANGELOG.md @Genomicsplc/sci-dev
+LICENCE @Genomicsplc/sci-dev
